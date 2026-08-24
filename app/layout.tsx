@@ -1,20 +1,27 @@
 import type { Metadata } from "next"
-import { Inter, DM_Serif_Display } from "next/font/google"
+import { Montserrat, Playfair_Display, Caveat } from "next/font/google"
 import "./globals.css"
 import { auth } from "@/auth"
 import { Navbar } from "./components/Navbar"
 import { ClickSound } from "./components/ClickSound"
 import { SessionProvider } from "./components/SessionProvider"
 
-const inter = Inter({
+const montserrat = Montserrat({
   variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 })
 
-const dmSerifDisplay = DM_Serif_Display({
+const playfairDisplay = Playfair_Display({
   variable: "--font-heading",
   subsets: ["latin"],
-  weight: "400",
+  weight: ["400", "500", "600", "700"],
+})
+
+const caveat = Caveat({
+  variable: "--font-accent",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
 })
 
 export const metadata: Metadata = {
@@ -27,7 +34,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${dmSerifDisplay.variable} h-full antialiased`}
+      className={`${montserrat.variable} ${playfairDisplay.variable} ${caveat.variable} h-full antialiased`}
     >
       <SessionProvider session={session}>
         <body className="flex min-h-screen flex-col text-foreground">

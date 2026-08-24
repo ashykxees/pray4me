@@ -38,8 +38,8 @@ export function PrayerList({
   return (
     <div className="space-y-5">
       {error && (
-        <p className="flex items-center gap-2 rounded-2xl bg-red-100 p-4 text-red-800">
-          <MessageSquareWarning className="h-5 w-5" />
+        <p className="flex items-center gap-2 rounded-2xl bg-brand-soft-peach/20 p-4 text-brand-deep-brown">
+          <MessageSquareWarning className="h-5 w-5 text-brand-warm-tan" />
           {error}
         </p>
       )}
@@ -79,8 +79,8 @@ export function PrayerList({
                 onClick={() => handlePray(r.id)}
                 className={`mt-5 flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition ${
                   hasPrayed
-                    ? "bg-red-100 text-brand-rose"
-                    : "border border-brand-tan bg-white text-brand-brown hover:bg-brand-beige"
+                    ? "bg-brand-soft-peach/30 text-brand-deep-brown"
+                    : "border border-brand-warm-beige bg-white text-brand-brown hover:bg-brand-warm-beige/40"
                 }`}
               >
                 <Heart className={`h-4 w-4 ${hasPrayed ? "fill-current" : ""}`} />
