@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "start": "prisma migrate deploy && next start",
+    "start": "node scripts/start.js",
     "migrate": "prisma migrate deploy",
     "postinstall": "prisma generate",
     "lint": "eslint"
@@ -20,6 +20,7 @@
     "clsx": "^2.1.1",
     "discord-api-types": "^0.38.53",
     "discord-interactions": "^4.4.0",
+    "discord.js": "^14.27.0",
     "googleapis": "^176.0.0",
     "i18n-iso-countries": "^7.14.0",
     "libphonenumber-js": "^1.13.11",
