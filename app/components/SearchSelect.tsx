@@ -27,7 +27,13 @@ export function SearchSelect({
   const filtered = useMemo(() => {
     const q = value.trim().toLowerCase()
     if (!q) return options
-    return options.filter((o) => o.toLowerCase().includes(q))
+    return options
+      .filter((o) => o.toLowerCase().includes(q))
+      .sort((a, b) => {
+        const aStarts = a.toLowerCase().startsWith(q) ? -1 : 1
+        const bStarts = b.toLowerCase().startsWith(q) ? -1 : 1
+        return aStarts - bStarts || a.localeCompare(b)
+      })
   }, [options, value])
 
   const select = (option: string) => {
@@ -51,9 +57,10 @@ export function SearchSelect({
       const exact = options.find((o) => o.toLowerCase() === value.trim().toLowerCase())
       if (exact) {
         onChange(exact)
-      } else if (filtered.length > 0) {
-        onChange(filtered[0])
       }
+      // Intentionally do NOT auto-select the first filtered option on blur.
+      // The user must click/press Enter to choose, so typing "Un" does not
+      // silently become a wrong country.
     }, 120)
   }
 
