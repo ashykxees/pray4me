@@ -25,38 +25,31 @@ export function OnboardingForm() {
   const [step, setStep] = useState(0)
   const [error, setError] = useState("")
   const [form, setForm] = useState(() => {
-    if (typeof window === "undefined") {
-      return {
-        firstName: "",
-        age: "",
-        country: "",
-        state: "",
-        phone: "",
-        purpose: [] as string[],
-        tos: false,
-      }
+    const fallback = {
+      firstName: "",
+      age: "",
+      country: "",
+      state: "",
+      phone: "",
+      purpose: [] as string[],
+      tos: false,
     }
+    if (typeof window === "undefined") return fallback
     try {
-      const draft = JSON.parse(localStorage.getItem("onboardingDraft") || "{}")
+      const source =
+        localStorage.getItem("onboardingData") || localStorage.getItem("onboardingDraft") || "{}"
+      const data = JSON.parse(source)
       return {
-        firstName: draft.firstName || "",
-        age: draft.age || "",
-        country: draft.country || "",
-        state: draft.state || "",
-        phone: draft.phone || "",
-        purpose: Array.isArray(draft.purpose) ? draft.purpose : [],
-        tos: draft.tos || false,
+        firstName: data.firstName || "",
+        age: data.age || "",
+        country: data.country || "",
+        state: data.state || "",
+        phone: data.phone || "",
+        purpose: Array.isArray(data.purpose) ? data.purpose : [],
+        tos: data.tos || false,
       }
     } catch {
-      return {
-        firstName: "",
-        age: "",
-        country: "",
-        state: "",
-        phone: "",
-        purpose: [] as string[],
-        tos: false,
-      }
+      return fallback
     }
   })
 
@@ -64,6 +57,35 @@ export function OnboardingForm() {
     if (typeof window === "undefined") return
     localStorage.setItem("onboardingDraft", JSON.stringify(form))
   }, [form])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (localStorage.getItem("onboardingCompleted") !== "true") return
+    const raw = localStorage.getItem("onboardingData")
+    if (!raw) return
+
+    const data = JSON.parse(raw)
+
+    async function restore() {
+      const formData = new FormData()
+      formData.set("firstName", data.firstName || "")
+      formData.set("age", String(data.age || ""))
+      formData.set("country", data.country || "")
+      formData.set("state", data.state || "")
+      formData.set("phone", data.phone || "")
+      formData.set("purpose", Array.isArray(data.purpose) ? data.purpose.join(", ") : "")
+      formData.set("tos", data.tos ? "on" : "")
+
+      const result = await completeOnboarding(formData)
+      if (result && "error" in result && result.error) {
+        setError(String(result.error))
+        return
+      }
+      router.push("/dashboard")
+    }
+
+    void restore()
+  }, [router])
 
   const goToStep = (next: number) => {
     setError("")
@@ -126,6 +148,8 @@ export function OnboardingForm() {
     }
     if (typeof window !== "undefined") {
       localStorage.removeItem("onboardingDraft")
+      localStorage.setItem("onboardingCompleted", "true")
+      localStorage.setItem("onboardingData", JSON.stringify(form))
     }
     router.push("/dashboard")
   }
