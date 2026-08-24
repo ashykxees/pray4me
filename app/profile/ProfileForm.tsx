@@ -10,14 +10,6 @@ import { Save, UserCircle2, FileText } from "lucide-react"
 
 const STORAGE_KEY = "profileDraft"
 
-function isProfileEmpty(u: {
-  image?: string | null
-  bio?: string | null
-  favoriteSong?: string | null
-}) {
-  return !u.image && !u.bio && !u.favoriteSong
-}
-
 export function ProfileForm({
   user,
   tags,
@@ -57,11 +49,10 @@ export function ProfileForm({
   }
 
   /* eslint-disable react-hooks/set-state-in-effect */
-  // Restore draft from localStorage when the server profile is empty.
+  // Restore any missing profile fields from localStorage and persist them.
   useEffect(() => {
     if (typeof window === "undefined") return
     if (restoredRef.current) return
-    if (!isProfileEmpty(user)) return
 
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return
@@ -73,24 +64,41 @@ export function ProfileForm({
       favoriteSongUrl?: string
       favoriteSongPreviewUrl?: string
     }
-    if (!saved.image && !saved.bio && !saved.favoriteSong) return
 
+    const nextImage = user.image || saved.image || ""
+    const nextBio = user.bio || saved.bio || ""
+    const nextSong = user.favoriteSong || saved.favoriteSong || ""
+    const nextSongUrl = user.favoriteSongUrl || saved.favoriteSongUrl || ""
+    const nextPreviewUrl = user.favoriteSongPreviewUrl || saved.favoriteSongPreviewUrl || ""
+
+    let changed = false
+    if (!user.image && saved.image) {
+      setImage(saved.image)
+      changed = true
+    }
+    if (!user.bio && saved.bio) {
+      setBio(saved.bio)
+      changed = true
+    }
+    if (!user.favoriteSong && saved.favoriteSong) {
+      setSong({
+        favoriteSong: nextSong,
+        favoriteSongUrl: nextSongUrl,
+        favoriteSongPreviewUrl: nextPreviewUrl,
+      })
+      changed = true
+    }
+
+    if (!changed) return
     restoredRef.current = true
-    setImage(saved.image || "")
-    setBio(saved.bio || "")
-    setSong({
-      favoriteSong: saved.favoriteSong || "",
-      favoriteSongUrl: saved.favoriteSongUrl || "",
-      favoriteSongPreviewUrl: saved.favoriteSongPreviewUrl || "",
-    })
 
     async function restore() {
       const data = new FormData()
-      data.set("image", saved.image || "")
-      data.set("bio", saved.bio || "")
-      data.set("favoriteSong", saved.favoriteSong || "")
-      data.set("favoriteSongUrl", saved.favoriteSongUrl || "")
-      data.set("favoriteSongPreviewUrl", saved.favoriteSongPreviewUrl || "")
+      data.set("image", nextImage)
+      data.set("bio", nextBio)
+      data.set("favoriteSong", nextSong)
+      data.set("favoriteSongUrl", nextSongUrl)
+      data.set("favoriteSongPreviewUrl", nextPreviewUrl)
       try {
         await updateProfile(data)
         setMessage("Profile restored.")
