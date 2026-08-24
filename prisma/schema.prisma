@@ -57,8 +57,10 @@ model User {
   tosAgreed    Boolean   @default(false)
   onboarded    Boolean   @default(false)
 
-  bio          String?
-  favoriteSong String?
+  bio                   String?
+  favoriteSong          String?
+  favoriteSongUrl       String?
+  favoriteSongPreviewUrl String?
 
   role      String   @default("user")
   createdAt DateTime @default(now())
