@@ -31,10 +31,7 @@ export default async function HomePage() {
           </p>
 
           {session?.user ? (
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-500 px-8 py-4 font-semibold text-white shadow-lg shadow-purple-500/25 transition hover:scale-[1.02] active:scale-[0.98]"
-            >
+            <Link href="/dashboard" className="btn-primary">
               Go to Dashboard
             </Link>
           ) : (
@@ -42,10 +39,7 @@ export default async function HomePage() {
               <NotifyForm />
               <div className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <span className="text-sm text-white/50">Already part of the family?</span>
-                <SignInButton
-                  label="Sign in"
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-6 py-3 font-semibold text-white transition hover:bg-white/20 active:scale-[0.98]"
-                />
+                <SignInButton label="Sign in" className="btn-secondary" />
               </div>
             </>
           )}
