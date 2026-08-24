@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { revalidatePath } from "next/cache"
 
 export interface SongResult {
   trackName: string
@@ -15,11 +16,11 @@ export async function updateProfile(formData: FormData) {
   const session = await auth()
   if (!session?.user?.id) throw new Error("Unauthorized")
 
-  const image = formData.get("image") as string
-  const bio = formData.get("bio") as string
-  const favoriteSong = formData.get("favoriteSong") as string
-  const favoriteSongUrl = (formData.get("favoriteSongUrl") as string) || null
-  const favoriteSongPreviewUrl = (formData.get("favoriteSongPreviewUrl") as string) || null
+  const image = (formData.get("image") as string | null) ?? ""
+  const bio = (formData.get("bio") as string | null) ?? ""
+  const favoriteSong = (formData.get("favoriteSong") as string | null) ?? ""
+  const favoriteSongUrl = (formData.get("favoriteSongUrl") as string | null) || null
+  const favoriteSongPreviewUrl = (formData.get("favoriteSongPreviewUrl") as string | null) || null
 
   await prisma.user.update({
     where: { id: session.user.id },
@@ -31,6 +32,9 @@ export async function updateProfile(formData: FormData) {
       favoriteSongPreviewUrl,
     },
   })
+
+  revalidatePath("/profile")
+  revalidatePath("/dashboard")
 
   return { success: true }
 }
