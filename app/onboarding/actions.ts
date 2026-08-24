@@ -35,7 +35,11 @@ export async function completeOnboarding(formData: FormData) {
 
     const phoneCheck = validatePhone(phoneRaw, country)
     if (!phoneCheck.valid) {
-      return { error: "Please enter a valid phone number." }
+      console.error("Phone validation failed:", { phoneRaw, country, iso: phoneCheck.countryCode })
+      if (!phoneCheck.countryCode) {
+        return { error: `Please select a valid country (received "${country}").` }
+      }
+      return { error: `Please enter a valid phone number for ${country}.` }
     }
 
     const user = await prisma.user.upsert({
