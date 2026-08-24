@@ -73,6 +73,11 @@ export function OnboardingForm() {
   const ageNum = Number(form.age)
   const tooYoung = ageNum > 0 && ageNum < 13
   const phoneCheck = isPhoneLike(form.phone)
+  const stateOptions = statesByCountry[form.country]
+  const validCountry = countries.includes(form.country)
+  const validState = stateOptions
+    ? stateOptions.includes(form.state)
+    : form.state.trim().length > 0
 
   const canNext = () => {
     switch (step) {
@@ -81,7 +86,7 @@ export function OnboardingForm() {
       case 1:
         return form.age.trim().length > 0 && ageNum >= 13
       case 2:
-        return form.country.trim().length > 0 && form.state.trim().length > 0
+        return validCountry && validState
       case 3:
         return phoneCheck
       case 4:
@@ -166,12 +171,22 @@ export function OnboardingForm() {
       />
       <SearchSelect
         label="State / Province"
-        options={statesByCountry[form.country] ?? []}
+        options={stateOptions ?? []}
         value={form.state}
         onChange={(state) => setForm({ ...form, state })}
-        placeholder={form.country ? (statesByCountry[form.country]?.length ? "Select or type your state" : "Type your state / province") : "Select a country first"}
+        placeholder={form.country ? (stateOptions?.length ? "Select or type your state" : "Type your state / province") : "Select a country first"}
         disabled={!form.country}
       />
+      {form.country.trim() && !validCountry && (
+        <p className="rounded-2xl bg-red-100 p-4 text-red-800">
+          Please select a country from the list.
+        </p>
+      )}
+      {form.state.trim() && validCountry && !validState && (
+        <p className="rounded-2xl bg-red-100 p-4 text-red-800">
+          Please select a state / province from the list.
+        </p>
+      )}
     </div>,
     <div key="phone" className="space-y-4">
       <label className="label">Phone Number</label>
