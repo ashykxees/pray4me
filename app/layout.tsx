@@ -1,8 +1,10 @@
 import type { Metadata } from "next"
 import { Inter, DM_Serif_Display } from "next/font/google"
 import "./globals.css"
+import { auth } from "@/auth"
 import { Navbar } from "./components/Navbar"
 import { ClickSound } from "./components/ClickSound"
+import { SessionProvider } from "./components/SessionProvider"
 
 const inter = Inter({
   variable: "--font-sans",
@@ -20,17 +22,20 @@ export const metadata: Metadata = {
   description: "A calm place to worship, share struggles, ask for prayer, and find help with God.",
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth()
   return (
     <html
       lang="en"
       className={`${inter.variable} ${dmSerifDisplay.variable} h-full antialiased`}
     >
-      <body className="flex min-h-screen flex-col text-foreground">
-        <ClickSound />
-        <Navbar />
-        <main className="flex-1">{children}</main>
-      </body>
+      <SessionProvider session={session}>
+        <body className="flex min-h-screen flex-col text-foreground">
+          <ClickSound />
+          <Navbar />
+          <main className="flex-1">{children}</main>
+        </body>
+      </SessionProvider>
     </html>
   )
 }
