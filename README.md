@@ -71,7 +71,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Deploy
 
-Set all `.env` variables for production. For Railway/Render, make sure `DATABASE_URL=file:./dev.db` is set and the start command runs migrations before starting the server:
+Set all `.env` variables for production. The start command runs migrations before starting the server:
 
 ```bash
 npm run build
@@ -79,6 +79,8 @@ npm start
 ```
 
 `npm start` now runs `prisma migrate deploy && next start` so the SQLite database is created automatically.
+
+**Persistence on Railway:** SQLite on Railway is ephemeral unless you attach a volume. Create a volume in Railway and mount it at `/app/data`. Leave `DATABASE_URL` unset and the app will use `file:/app/data/dev.db` on the volume. If you prefer, you can also set `DATABASE_URL` to any PostgreSQL or SQLite connection string.
 
 ## Environment variables
 

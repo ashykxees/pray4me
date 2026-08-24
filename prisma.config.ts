@@ -11,6 +11,10 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: env("DATABASE_URL") || "file:./dev.db",
+    url:
+      env("DATABASE_URL") ||
+      (process.env.RAILWAY_VOLUME_MOUNT_PATH
+        ? `file:${process.env.RAILWAY_VOLUME_MOUNT_PATH.replace(/\/$/, "")}/dev.db`
+        : "file:./dev.db"),
   },
 });
