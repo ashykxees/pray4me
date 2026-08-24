@@ -7,6 +7,7 @@ import { completeOnboarding } from "./actions"
 import { ChevronLeft, ChevronRight, Check } from "lucide-react"
 import { SearchSelect } from "@/app/components/SearchSelect"
 import { countries, statesByCountry } from "@/lib/location-data"
+import { validatePhone } from "@/lib/phone"
 
 const purposeOptions = ["Pray for others", "Ask for prayer", "Praise God"]
 
@@ -35,6 +36,7 @@ export function OnboardingForm() {
 
   const ageNum = Number(form.age)
   const tooYoung = ageNum > 0 && ageNum < 13
+  const phoneCheck = validatePhone(form.phone, form.country)
 
   const canNext = () => {
     switch (step) {
@@ -45,7 +47,7 @@ export function OnboardingForm() {
       case 2:
         return form.country.trim().length > 0 && form.state.trim().length > 0
       case 3:
-        return form.phone.trim().length > 0
+        return phoneCheck.valid
       case 4:
         return form.purpose.length > 0
       case 5:
@@ -142,6 +144,11 @@ export function OnboardingForm() {
         placeholder="Phone number"
         required
       />
+      {form.phone.trim() && !phoneCheck.valid && (
+        <p className="rounded-2xl bg-red-100 p-4 text-red-800">
+          Please enter a valid phone number.
+        </p>
+      )}
     </div>,
     <div key="purpose" className="space-y-4">
       <label className="label">What are you here for?</label>
