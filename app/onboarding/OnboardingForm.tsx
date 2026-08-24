@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { completeOnboarding } from "./actions"
@@ -24,15 +24,51 @@ export function OnboardingForm() {
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [error, setError] = useState("")
-  const [form, setForm] = useState({
-    firstName: "",
-    age: "",
-    country: "",
-    state: "",
-    phone: "",
-    purpose: [] as string[],
-    tos: false,
+  const [form, setForm] = useState(() => {
+    if (typeof window === "undefined") {
+      return {
+        firstName: "",
+        age: "",
+        country: "",
+        state: "",
+        phone: "",
+        purpose: [] as string[],
+        tos: false,
+      }
+    }
+    try {
+      const draft = JSON.parse(localStorage.getItem("onboardingDraft") || "{}")
+      return {
+        firstName: draft.firstName || "",
+        age: draft.age || "",
+        country: draft.country || "",
+        state: draft.state || "",
+        phone: draft.phone || "",
+        purpose: Array.isArray(draft.purpose) ? draft.purpose : [],
+        tos: draft.tos || false,
+      }
+    } catch {
+      return {
+        firstName: "",
+        age: "",
+        country: "",
+        state: "",
+        phone: "",
+        purpose: [] as string[],
+        tos: false,
+      }
+    }
   })
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    localStorage.setItem("onboardingDraft", JSON.stringify(form))
+  }, [form])
+
+  const goToStep = (next: number) => {
+    setError("")
+    setStep(next)
+  }
 
   const ageNum = Number(form.age)
   const tooYoung = ageNum > 0 && ageNum < 13
@@ -61,7 +97,7 @@ export function OnboardingForm() {
     setForm((f) => ({
       ...f,
       purpose: f.purpose.includes(value)
-        ? f.purpose.filter((p) => p !== value)
+        ? f.purpose.filter((p: string) => p !== value)
         : [...f.purpose, value],
     }))
   }
@@ -81,6 +117,9 @@ export function OnboardingForm() {
     if (result && "error" in result && result.error) {
       setError(String(result.error))
       return
+    }
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("onboardingDraft")
     }
     router.push("/dashboard")
   }
@@ -251,7 +290,7 @@ export function OnboardingForm() {
             {step > 0 ? (
               <button
                 type="button"
-                onClick={() => setStep(step - 1)}
+                onClick={() => goToStep(step - 1)}
                 className="btn-ghost"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -264,7 +303,7 @@ export function OnboardingForm() {
               <button
                 type="button"
                 disabled={!canNext()}
-                onClick={() => canNext() && setStep(step + 1)}
+                onClick={() => canNext() && goToStep(step + 1)}
                 className="btn-primary"
               >
                 Next

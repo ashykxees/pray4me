@@ -1,5 +1,5 @@
 import { CountryCode, isValidPhoneNumber, parsePhoneNumberFromString } from "libphonenumber-js"
-import { getSimpleAlpha2Code } from "i18n-iso-countries"
+import { countryToIso } from "./country-iso"
 
 export function validatePhone(
   phone: string,
@@ -9,7 +9,7 @@ export function validatePhone(
   if (!raw) return { valid: false }
 
   const iso = country
-    ? (getSimpleAlpha2Code(country, "en") as CountryCode | undefined) || undefined
+    ? (countryToIso[country] as CountryCode | undefined)
     : undefined
 
   try {
