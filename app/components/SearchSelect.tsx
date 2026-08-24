@@ -68,7 +68,10 @@ export function SearchSelect({
     if (e.key === "Enter") {
       e.preventDefault()
       if (open && filtered.length > 0) {
-        select(filtered[0])
+        const exact = filtered.find(
+          (o) => o.toLowerCase() === value.trim().toLowerCase()
+        )
+        select(exact || filtered[0])
       }
     }
     if (e.key === "Escape") {

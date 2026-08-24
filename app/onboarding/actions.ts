@@ -3,7 +3,7 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { isDiscordConfigured, sendProfileModeration } from "@/lib/discord"
-import { validatePhone } from "@/lib/phone-server"
+import { validatePhone } from "@/lib/phone"
 
 export async function completeOnboarding(formData: FormData) {
   try {
