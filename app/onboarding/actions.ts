@@ -3,6 +3,7 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { isDiscordConfigured, sendProfileModeration } from "@/lib/discord"
+import { validatePhone } from "@/lib/phone"
 
 export async function completeOnboarding(formData: FormData) {
   try {
@@ -15,7 +16,7 @@ export async function completeOnboarding(formData: FormData) {
     const age = Number(formData.get("age"))
     const country = (formData.get("country") as string) || ""
     const state = (formData.get("state") as string) || ""
-    const phone = (formData.get("phone") as string) || ""
+    const phoneRaw = (formData.get("phone") as string) || ""
     const purposeRaw = (formData.get("purpose") as string) || ""
     const tos = formData.get("tos") === "on"
 
@@ -32,14 +33,33 @@ export async function completeOnboarding(formData: FormData) {
       return { error: "You must agree to the Terms of Service and Privacy Policy." }
     }
 
-    const user = await prisma.user.update({
+    const phoneCheck = validatePhone(phoneRaw, country)
+    if (!phoneCheck.valid) {
+      return { error: "Please enter a valid phone number." }
+    }
+
+    const user = await prisma.user.upsert({
       where: { id: session.user.id },
-      data: {
+      update: {
         firstName,
         age,
         country,
         state,
-        phone,
+        phone: phoneCheck.formatted,
+        purpose: purposeRaw,
+        tosAgreed: true,
+        onboarded: true,
+      },
+      create: {
+        id: session.user.id,
+        email: session.user.email ?? undefined,
+        name: session.user.name ?? undefined,
+        image: session.user.image ?? undefined,
+        firstName,
+        age,
+        country,
+        state,
+        phone: phoneCheck.formatted,
         purpose: purposeRaw,
         tosAgreed: true,
         onboarded: true,
