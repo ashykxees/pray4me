@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter, DM_Serif_Display } from "next/font/google"
 import "./globals.css"
 import { Navbar } from "./components/Navbar"
+import { ClickSound } from "./components/ClickSound"
 
 const inter = Inter({
   variable: "--font-sans",
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${inter.variable} ${dmSerifDisplay.variable} h-full antialiased`}
     >
       <body className="flex min-h-screen flex-col text-foreground">
+        <ClickSound />
         <Navbar />
         <main className="flex-1">{children}</main>
       </body>

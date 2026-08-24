@@ -1,7 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { SignInButton } from "./components/SignInButton"
-import { Heart, Users, BookOpen } from "lucide-react"
+import { Heart, Users, BookOpen, Compass } from "lucide-react"
 
 export default function HomePage() {
   return (
@@ -25,9 +25,10 @@ export default function HomePage() {
             ask for prayer, and find help with God — completely free.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <SignInButton />
-            <Link href="#features" className="btn-secondary">
-              Learn more
+            <SignInButton label="Get Started" />
+            <Link href="/explore" className="btn-secondary">
+              <Compass className="h-4 w-4" />
+              Explore
             </Link>
           </div>
           <p className="mt-6 text-sm text-brand-sand">

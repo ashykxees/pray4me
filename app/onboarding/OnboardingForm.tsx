@@ -5,6 +5,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { completeOnboarding } from "./actions"
 import { ChevronLeft, ChevronRight, Check } from "lucide-react"
+import { SearchSelect } from "@/app/components/SearchSelect"
+import { countries, statesByCountry } from "@/lib/location-data"
 
 const purposeOptions = ["Pray for others", "Ask for prayer", "Praise God"]
 
@@ -73,12 +75,12 @@ export function OnboardingForm() {
     data.set("phone", form.phone)
     data.set("purpose", form.purpose.join(", "))
     data.set("tos", form.tos ? "on" : "")
-    try {
-      await completeOnboarding(data)
-      router.push("/dashboard")
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong.")
+    const result = await completeOnboarding(data)
+    if (result && "error" in result && result.error) {
+      setError(String(result.error))
+      return
     }
+    router.push("/dashboard")
   }
 
   const steps = [
@@ -114,22 +116,20 @@ export function OnboardingForm() {
       </p>
     </div>,
     <div key="location" className="space-y-4">
-      <label className="label">Where are you from?</label>
-      <input
-        type="text"
+      <SearchSelect
+        label="Country"
+        options={countries}
         value={form.country}
-        onChange={(e) => setForm({ ...form, country: e.target.value })}
-        className="input"
-        placeholder="Country"
-        required
+        onChange={(country) => setForm({ ...form, country, state: "" })}
+        placeholder="Type or select your country"
       />
-      <input
-        type="text"
+      <SearchSelect
+        label="State / Province"
+        options={statesByCountry[form.country] ?? []}
         value={form.state}
-        onChange={(e) => setForm({ ...form, state: e.target.value })}
-        className="input"
-        placeholder="State / Province"
-        required
+        onChange={(state) => setForm({ ...form, state })}
+        placeholder={form.country ? (statesByCountry[form.country]?.length ? "Select or type your state" : "Type your state / province") : "Select a country first"}
+        disabled={!form.country}
       />
     </div>,
     <div key="phone" className="space-y-4">
