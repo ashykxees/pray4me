@@ -10,25 +10,28 @@ function playClick() {
       (window as unknown as { AudioContext?: WebAudioContext }).AudioContext ||
       (window as unknown as { webkitAudioContext?: WebAudioContext }).webkitAudioContext
     if (!AC) return
+
     const ctx = new AC()
     if (ctx.state === "suspended") {
       void ctx.resume()
     }
+
     const t = ctx.currentTime
     const oscillator = ctx.createOscillator()
     const gain = ctx.createGain()
 
-    oscillator.type = "triangle"
-    oscillator.frequency.setValueAtTime(600, t)
-    oscillator.frequency.exponentialRampToValueAtTime(250, t + 0.05)
+    oscillator.type = "sine"
+    oscillator.frequency.setValueAtTime(320, t)
+    oscillator.frequency.exponentialRampToValueAtTime(240, t + 0.12)
 
-    gain.gain.setValueAtTime(0.07, t)
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05)
+    gain.gain.setValueAtTime(0, t)
+    gain.gain.linearRampToValueAtTime(0.04, t + 0.01)
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18)
 
     oscillator.connect(gain)
     gain.connect(ctx.destination)
     oscillator.start(t)
-    oscillator.stop(t + 0.06)
+    oscillator.stop(t + 0.2)
   } catch {
     // ignore audio errors
   }

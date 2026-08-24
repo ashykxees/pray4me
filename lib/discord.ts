@@ -48,7 +48,7 @@ export async function updateChannelMessage(channelId: string, messageId: string,
   return rest.patch(Routes.channelMessage(channelId, messageId), { body }) as Promise<unknown>
 }
 
-function passDenyButtons(type: "profile" | "prayer" | "story", id: string): ActionRow[] {
+function passDenyButtons(type: "prayer" | "story", id: string): ActionRow[] {
   return [
     {
       type: 1,
@@ -84,7 +84,7 @@ export async function sendProfileModeration(user: {
   return sendChannelMessage(channelId!, {
     embeds: [
       {
-        title: "New user profile moderation",
+        title: "New user profile",
         color: 0xc9a689,
         fields: [
           { name: "Name", value: user.firstName || user.name || "N/A", inline: true },
@@ -96,7 +96,6 @@ export async function sendProfileModeration(user: {
         ],
       },
     ],
-    components: passDenyButtons("profile", user.id),
   })
 }
 

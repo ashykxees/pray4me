@@ -1,7 +1,6 @@
-import { NextRequest } from "next/server"
+import { NextRequest, after } from "next/server"
 import { verifyKey, InteractionType, InteractionResponseType } from "discord-interactions"
-import { prisma } from "@/lib/prisma"
-import { updateChannelMessage } from "@/lib/discord"
+import type { PrismaClient } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
 
@@ -81,95 +80,33 @@ export async function POST(request: NextRequest) {
     return [embed]
   }
 
-  async function notifyPrayerDenial(id: string, reason: string) {
-    const pr = await prisma.prayerRequest.findUnique({
-      where: { id },
-      include: { user: true },
-    })
-    if (pr?.userId) {
-      await prisma.notification.create({
-        data: {
-          userId: pr.userId,
-          message: `Your ${pr.title || "prayer request"} was denied for ${reason}`,
-        },
-      })
-    }
-  }
-
-  async function notifyStoryDenial(id: string, reason: string) {
-    const sr = await prisma.storyRequest.findUnique({ where: { id } })
-    if (sr?.userId) {
-      await prisma.notification.create({
-        data: {
-          userId: sr.userId,
-          message: `Your story submission was denied for ${reason}`,
-        },
-      })
-    }
-  }
-
-  async function notifyProfileDenial(id: string, reason: string) {
-    await prisma.notification.create({
-      data: {
-        userId: id,
-        message: `Your profile was denied for ${reason}`,
-      },
-    })
-  }
-
-  async function finalizeMessage(embeds: Embed[], components: unknown[] = []) {
-    if (!channelId || !messageId) return
-    try {
-      await updateChannelMessage(channelId, messageId, { embeds, components })
-    } catch (err) {
-      console.error("Failed to update Discord message:", err)
-    }
-  }
-
-  async function approveSubmission(kind: string, id: string) {
-    if (kind === "prayer") {
-      await prisma.prayerRequest.update({ where: { id }, data: { status: "APPROVED" } })
-    } else if (kind === "story") {
-      await prisma.storyRequest.update({ where: { id }, data: { status: "APPROVED" } })
-    } else if (kind === "profile") {
-      await prisma.user.update({ where: { id }, data: { role: "approved" } })
-    }
-  }
-
-  async function denySubmission(kind: string, id: string, reason: string) {
-    if (kind === "prayer") {
-      await prisma.prayerRequest.update({
-        where: { id },
-        data: { status: "DENIED", denialReason: reason },
-      })
-      await notifyPrayerDenial(id, reason)
-    } else if (kind === "story") {
-      await prisma.storyRequest.update({
-        where: { id },
-        data: { status: "DENIED", denialReason: reason },
-      })
-      await notifyStoryDenial(id, reason)
-    } else if (kind === "profile") {
-      await prisma.user.update({ where: { id }, data: { role: "denied" } })
-      await notifyProfileDenial(id, reason)
-    }
-  }
-
   if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
     const data = interaction.data as Record<string, unknown>
     const [kind, action, id] = ((data.custom_id as string) || "").split(":")
 
     if (action === "pass") {
-      // Respond immediately so Discord doesn't time out, then do the slow DB work in the background.
-      void (async () => {
+      const processing = updateEmbedStatus("Processing...", undefined, 0xf1c40f)
+
+      after(async () => {
         try {
-          await approveSubmission(kind, id)
-          await finalizeMessage(updateEmbedStatus("Approved", undefined, 0x2ecc71), [])
+          const { prisma } = await import("@/lib/prisma")
+          const { updateChannelMessage } = await import("@/lib/discord")
+          await approveSubmission(prisma, kind, id)
+          const approved = updateEmbedStatus("Approved", undefined, 0x2ecc71)
+          await updateChannelMessage(channelId, messageId, { embeds: approved, components: [] })
         } catch (err) {
           console.error("Failed to approve submission:", err)
+          try {
+            const { updateChannelMessage } = await import("@/lib/discord")
+            const failed = updateEmbedStatus("Approval failed — please retry", undefined, 0xe74c3c)
+            await updateChannelMessage(channelId, messageId, { embeds: failed, components: [] })
+          } catch (e) {
+            console.error("Failed to update message after approval error:", e)
+          }
         }
-      })()
-      return respondUpdate(updateEmbedStatus("Processing...", undefined, 0xf1c40f), [])
+      })
+
+      return respondUpdate(processing, [])
     }
 
     if (action === "deny") {
@@ -179,22 +116,101 @@ export async function POST(request: NextRequest) {
 
   if (interaction.type === InteractionType.MODAL_SUBMIT) {
     const data = interaction.data as Record<string, unknown>
-    const [kind] = ((data.custom_id as string) || "").split(":")
-    const id = ((data.custom_id as string) || "").split(":")[2]
+    const customId = (data.custom_id as string) || ""
+    const [kind] = customId.split(":")
+    const id = customId.split(":")[2] ?? ""
     const components = (data.components as { components: { value?: string }[] }[]) || []
     const reasonRow = components[0]?.components?.[0]
     const reason = reasonRow?.value || "No reason given"
 
-    void (async () => {
+    const processing = updateEmbedStatus("Processing...", reason, 0xf1c40f)
+
+    after(async () => {
       try {
-        await denySubmission(kind, id, reason)
-        await finalizeMessage(updateEmbedStatus("Denied", reason, 0xe74c3c), [])
+        const { prisma } = await import("@/lib/prisma")
+        const { updateChannelMessage } = await import("@/lib/discord")
+        await denySubmission(prisma, kind, id, reason)
+        const denied = updateEmbedStatus("Denied", reason, 0xe74c3c)
+        await updateChannelMessage(channelId, messageId, { embeds: denied, components: [] })
       } catch (err) {
         console.error("Failed to deny submission:", err)
+        try {
+          const { updateChannelMessage } = await import("@/lib/discord")
+          const failed = updateEmbedStatus("Denial failed — please retry", reason, 0xe74c3c)
+          await updateChannelMessage(channelId, messageId, { embeds: failed, components: [] })
+        } catch (e) {
+          console.error("Failed to update message after denial error:", e)
+        }
       }
-    })()
-    return respondUpdate(updateEmbedStatus("Processing...", reason, 0xf1c40f), [])
+    })
+
+    return respondUpdate(processing, [])
   }
 
   return new Response("Unhandled interaction type", { status: 400 })
+}
+
+async function approveSubmission(prisma: PrismaClient, kind: string, id: string) {
+  if (kind === "prayer") {
+    await prisma.prayerRequest.update({ where: { id }, data: { status: "APPROVED" } })
+  } else if (kind === "story") {
+    await prisma.storyRequest.update({ where: { id }, data: { status: "APPROVED" } })
+  } else if (kind === "profile") {
+    await prisma.user.update({ where: { id }, data: { role: "approved" } })
+  }
+}
+
+async function denySubmission(prisma: PrismaClient, kind: string, id: string, reason: string) {
+  if (kind === "prayer") {
+    await prisma.prayerRequest.update({
+      where: { id },
+      data: { status: "DENIED", denialReason: reason },
+    })
+    await notifyPrayerDenial(prisma, id, reason)
+  } else if (kind === "story") {
+    await prisma.storyRequest.update({
+      where: { id },
+      data: { status: "DENIED", denialReason: reason },
+    })
+    await notifyStoryDenial(prisma, id, reason)
+  } else if (kind === "profile") {
+    await prisma.user.update({ where: { id }, data: { role: "denied" } })
+    await notifyProfileDenial(prisma, id, reason)
+  }
+}
+
+async function notifyPrayerDenial(prisma: PrismaClient, id: string, reason: string) {
+  const pr = await prisma.prayerRequest.findUnique({
+    where: { id },
+    include: { user: true },
+  })
+  if (pr?.userId) {
+    await prisma.notification.create({
+      data: {
+        userId: pr.userId,
+        message: `Your ${pr.title || "prayer request"} was denied for ${reason}`,
+      },
+    })
+  }
+}
+
+async function notifyStoryDenial(prisma: PrismaClient, id: string, reason: string) {
+  const sr = await prisma.storyRequest.findUnique({ where: { id } })
+  if (sr?.userId) {
+    await prisma.notification.create({
+      data: {
+        userId: sr.userId,
+        message: `Your story submission was denied for ${reason}`,
+      },
+    })
+  }
+}
+
+async function notifyProfileDenial(prisma: PrismaClient, id: string, reason: string) {
+  await prisma.notification.create({
+    data: {
+      userId: id,
+      message: `Your profile was denied for ${reason}`,
+    },
+  })
 }
