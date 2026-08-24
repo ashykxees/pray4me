@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createPrayerRequest } from "./actions"
+import { Send, ArrowLeft } from "lucide-react"
+import Link from "next/link"
 
 export default function NewPrayerRequestPage() {
   const router = useRouter()
@@ -25,38 +27,42 @@ export default function NewPrayerRequestPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="mb-6 text-3xl font-bold text-brand-brown-dark">Create Prayer Request</h1>
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl bg-white p-8 shadow-xl">
+    <div className="mx-auto max-w-2xl px-4 py-10">
+      <Link href="/dashboard/prayer" className="btn-ghost mb-6 inline-flex">
+        <ArrowLeft className="h-4 w-4" />
+        Back to requests
+      </Link>
+      <h1 className="mb-2 text-4xl text-brand-brown-dark">Create Prayer Request</h1>
+      <p className="mb-8 text-brand-sand">Share what is on your heart. Our moderators will review it quickly.</p>
+      <form onSubmit={handleSubmit} className="card space-y-6">
         <div>
-          <label className="block text-sm font-medium text-brand-brown-dark">Prayer</label>
+          <label className="label">Prayer</label>
           <p className="mb-2 text-sm text-brand-sand">What do you need prayer for?</p>
           <textarea
             value={prayer}
             onChange={(e) => setPrayer(e.target.value)}
-            className="w-full rounded-xl border border-brand-tan bg-brand-cream p-3 text-brand-brown-dark"
+            className="input min-h-[140px]"
             rows={5}
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-brown-dark">Explanation (optional)</label>
+          <label className="label">Explanation (optional)</label>
+          <p className="mb-2 text-sm text-brand-sand">Add context if you feel comfortable.</p>
           <textarea
             value={explanation}
             onChange={(e) => setExplanation(e.target.value)}
-            className="w-full rounded-xl border border-brand-tan bg-brand-cream p-3 text-brand-brown-dark"
+            className="input min-h-[100px]"
             rows={4}
           />
         </div>
 
-        {error && <p className="rounded-lg bg-red-100 p-3 text-red-800">{error}</p>}
+        {error && <p className="rounded-2xl bg-red-100 p-4 text-red-800">{error}</p>}
 
-        <button
-          type="submit"
-          className="rounded-full bg-brand-brown px-6 py-2 font-semibold text-brand-cream hover:bg-brand-brown-dark"
-        >
-          Submit
+        <button type="submit" className="btn-primary">
+          <Send className="h-4 w-4" />
+          Submit Request
         </button>
       </form>
     </div>

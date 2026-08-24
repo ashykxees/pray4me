@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-
 import { useRouter } from "next/navigation"
 import { updateProfile } from "./actions"
+import { Save, UserCircle2, Music, FileText } from "lucide-react"
 
 export function ProfileForm({
   user,
@@ -46,80 +46,93 @@ export function ProfileForm({
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="mb-6 text-3xl font-bold text-brand-brown-dark">Edit your profile</h1>
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl bg-white p-8 shadow-xl">
-        <div className="flex items-center gap-4">
+    <div className="mx-auto max-w-2xl px-4 py-10">
+      <h1 className="mb-2 text-4xl text-brand-brown-dark">Edit your profile</h1>
+      <p className="mb-8 text-brand-sand">Update how others see you in the community.</p>
+
+      <form onSubmit={handleSubmit} className="card space-y-6">
+        <div className="flex items-center gap-5">
           {image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={image}
               alt="Profile"
-              className="h-20 w-20 rounded-full object-cover"
+              className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-lg"
             />
           ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-beige text-2xl font-bold text-brand-brown">
+            <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-brand-beige text-4xl font-bold text-brand-brown shadow-lg">
               {user.firstName?.[0] || user.name?.[0] || "?"}
             </div>
           )}
           <div className="flex-1">
-            <label className="block text-sm font-medium text-brand-brown-dark">Profile Picture URL</label>
+            <label className="label flex items-center gap-2">
+              <UserCircle2 className="h-4 w-4" />
+              Profile Picture URL
+            </label>
             <input
               type="url"
               value={image}
               onChange={(e) => setImage(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-brand-tan bg-brand-cream p-2.5 text-brand-brown-dark"
+              className="input"
               placeholder="https://example.com/photo.jpg"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-brown-dark">Bio</label>
+          <label className="label flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Bio
+          </label>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-brand-tan bg-brand-cream p-2.5 text-brand-brown-dark"
+            className="input min-h-[120px]"
             rows={4}
             placeholder="Share a little about yourself..."
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-brown-dark">Favorite Worship Song</label>
+          <label className="label flex items-center gap-2">
+            <Music className="h-4 w-4" />
+            Favorite Worship Song
+          </label>
           <input
             type="text"
             value={favoriteSong}
             onChange={(e) => setFavoriteSong(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-brand-tan bg-brand-cream p-2.5 text-brand-brown-dark"
+            className="input"
             placeholder="Song title / artist"
           />
         </div>
 
-        {message && <p className="rounded-lg bg-brand-beige p-3 text-brand-brown-dark">{message}</p>}
+        {message && (
+          <p className="rounded-2xl bg-brand-beige p-4 text-brand-brown-dark">
+            {message}
+          </p>
+        )}
 
-        <button
-          type="submit"
-          className="rounded-full bg-brand-brown px-6 py-2 text-brand-cream hover:bg-brand-brown-dark"
-        >
+        <button type="submit" className="btn-primary">
+          <Save className="h-4 w-4" />
           Save Profile
         </button>
       </form>
 
-      <div className="mt-10 rounded-3xl bg-white p-8 shadow-xl">
-        <h2 className="mb-4 text-xl font-bold text-brand-brown-dark">Current Prayer Requests</h2>
+      <div className="mt-8 card">
+        <h2 className="mb-4 text-2xl text-brand-brown-dark">Current Prayer Requests</h2>
         {user.prayerRequests.length === 0 ? (
           <p className="text-brand-sand">You have not submitted any prayer requests yet.</p>
         ) : (
           <ul className="space-y-4">
             {user.prayerRequests.map((pr) => (
-              <li key={pr.id} className="rounded-xl border border-brand-tan p-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-brand-brown-dark">
+              <li key={pr.id} className="rounded-2xl border border-brand-tan/40 bg-white/70 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-semibold text-brand-brown-dark line-clamp-1">
                     {pr.title || pr.prayer.slice(0, 50) + (pr.prayer.length > 50 ? "..." : "")}
                   </span>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-xs ${
+                    className={`badge ${
                       pr.status === "APPROVED"
                         ? "bg-green-100 text-green-800"
                         : pr.status === "DENIED"
@@ -130,7 +143,7 @@ export function ProfileForm({
                     {pr.status}
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-brand-brown">{pr.prayer}</p>
+                <p className="mt-2 text-sm text-brand-brown line-clamp-2">{pr.prayer}</p>
                 {pr.status === "DENIED" && pr.denialReason && (
                   <p className="mt-2 text-sm text-red-700">Reason: {pr.denialReason}</p>
                 )}

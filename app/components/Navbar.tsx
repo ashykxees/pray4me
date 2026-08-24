@@ -3,34 +3,42 @@ import Image from "next/image"
 import { auth } from "@/auth"
 import { SignInButton } from "./SignInButton"
 import { SignOutButton } from "./SignOutButton"
+import { Menu } from "lucide-react"
 
 export async function Navbar() {
   const session = await auth()
 
   const links = [
     { href: "/dashboard", label: "Dashboard" },
-    { href: "/dashboard/prayer", label: "Prayer Requests" },
-    { href: "/stories", label: "Your Stories" },
-    { href: "/live", label: "Live Sermons" },
+    { href: "/dashboard/prayer", label: "Prayer" },
+    { href: "/stories", label: "Stories" },
+    { href: "/live", label: "Live" },
   ]
 
   return (
-    <header className="sticky top-0 z-50 bg-brand-brown text-brand-cream shadow-md">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+    <header className="sticky top-0 z-50 border-b border-brand-tan/30 bg-white/80 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link href="/" className="flex items-center gap-3">
-          <Image src="/logo.png" alt="Pray4Me logo" width={40} height={40} className="rounded-full" />
-          <span className="text-xl font-semibold tracking-wide">Pray4Me</span>
+          <Image src="/logo.png" alt="Pray4Me logo" width={44} height={44} className="rounded-full shadow-sm" />
+          <span className="font-heading text-2xl text-brand-brown-dark">Pray4Me</span>
         </Link>
 
-        <nav className="flex items-center gap-4 text-sm font-medium">
+        <nav className="hidden items-center gap-1 text-sm font-medium md:flex">
           {session?.user ? (
             <>
               {links.map((l) => (
-                <Link key={l.href} href={l.href} className="hover:text-brand-sand hidden sm:inline">
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="rounded-full px-4 py-2 text-brand-brown transition hover:bg-brand-beige hover:text-brand-brown-dark"
+                >
                   {l.label}
                 </Link>
               ))}
-              <Link href="/profile" className="hover:text-brand-sand hidden sm:inline">
+              <Link
+                href="/profile"
+                className="rounded-full px-4 py-2 text-brand-brown transition hover:bg-brand-beige hover:text-brand-brown-dark"
+              >
                 Profile
               </Link>
               <SignOutButton />
@@ -39,6 +47,14 @@ export async function Navbar() {
             <SignInButton />
           )}
         </nav>
+
+        {/* Mobile nav toggle rendered as a simple link list for now */}
+        <div className="flex items-center gap-2 md:hidden">
+          {session?.user ? <SignOutButton /> : <SignInButton />}
+          <button aria-label="Menu" className="rounded-full p-2 text-brand-brown hover:bg-brand-beige">
+            <Menu className="h-6 w-6" />
+          </button>
+        </div>
       </div>
     </header>
   )

@@ -3,6 +3,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { PrayerList } from "./PrayerList"
+import { PlusCircle } from "lucide-react"
 
 function ageRange(age: number) {
   if (age <= 14) return { min: 13, max: 14 }
@@ -32,19 +33,19 @@ export default async function PrayerRequestsPage() {
   })
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-3xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-brand-brown-dark">Prayer Requests</h1>
-        <Link
-          href="/dashboard/prayer/new"
-          className="rounded-full bg-brand-brown px-4 py-2 text-sm font-semibold text-brand-cream hover:bg-brand-brown-dark"
-        >
-          Create Request
+        <div>
+          <h1 className="text-4xl text-brand-brown-dark">Prayer Requests</h1>
+          <p className="mt-1 text-brand-sand">
+            Showing prayers from ages {range.min}-{range.max === 120 ? "18+" : range.max}.
+          </p>
+        </div>
+        <Link href="/dashboard/prayer/new" className="btn-secondary">
+          <PlusCircle className="h-4 w-4" />
+          Create
         </Link>
       </div>
-      <p className="mb-6 text-brand-sand">
-        Showing prayers from ages {range.min}-{range.max === 120 ? "18+" : range.max}.
-      </p>
       <PrayerList requests={requests} currentUserId={user.id} />
     </div>
   )
