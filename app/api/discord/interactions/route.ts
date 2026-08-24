@@ -1,4 +1,4 @@
-import { NextRequest, after } from "next/server"
+import { NextRequest } from "next/server"
 import { verifyKey, InteractionType, InteractionResponseType } from "discord-interactions"
 import type { PrismaClient } from "@prisma/client"
 
@@ -33,11 +33,8 @@ export async function POST(request: NextRequest) {
   const channelId = (interaction.channel_id as string) || ""
   const messageId = (message.id as string) || ""
 
-  function respondUpdate(updatedEmbeds: Embed[], components: unknown[] = []) {
-    return Response.json({
-      type: InteractionResponseType.UPDATE_MESSAGE,
-      data: { embeds: updatedEmbeds, components },
-    })
+  function respondDefer() {
+    return Response.json({ type: InteractionResponseType.DEFERRED_UPDATE_MESSAGE })
   }
 
   function modal(kind: string, id: string) {
@@ -85,12 +82,13 @@ export async function POST(request: NextRequest) {
     const [kind, action, id] = ((data.custom_id as string) || "").split(":")
 
     if (action === "pass") {
-      const processing = updateEmbedStatus("Processing...", undefined, 0xf1c40f)
-
-      after(async () => {
+      // Acknowledge immediately so Discord never times out, then update the message in the background.
+      void (async () => {
         try {
-          const { prisma } = await import("@/lib/prisma")
           const { updateChannelMessage } = await import("@/lib/discord")
+          const processing = updateEmbedStatus("Processing...", undefined, 0xf1c40f)
+          await updateChannelMessage(channelId, messageId, { embeds: processing, components: [] })
+          const { prisma } = await import("@/lib/prisma")
           await approveSubmission(prisma, kind, id)
           const approved = updateEmbedStatus("Approved", undefined, 0x2ecc71)
           await updateChannelMessage(channelId, messageId, { embeds: approved, components: [] })
@@ -104,9 +102,9 @@ export async function POST(request: NextRequest) {
             console.error("Failed to update message after approval error:", e)
           }
         }
-      })
+      })()
 
-      return respondUpdate(processing, [])
+      return respondDefer()
     }
 
     if (action === "deny") {
@@ -123,12 +121,13 @@ export async function POST(request: NextRequest) {
     const reasonRow = components[0]?.components?.[0]
     const reason = reasonRow?.value || "No reason given"
 
-    const processing = updateEmbedStatus("Processing...", reason, 0xf1c40f)
-
-    after(async () => {
+    // Acknowledge immediately, then patch the original message once the DB work is done.
+    void (async () => {
       try {
-        const { prisma } = await import("@/lib/prisma")
         const { updateChannelMessage } = await import("@/lib/discord")
+        const processing = updateEmbedStatus("Processing...", reason, 0xf1c40f)
+        await updateChannelMessage(channelId, messageId, { embeds: processing, components: [] })
+        const { prisma } = await import("@/lib/prisma")
         await denySubmission(prisma, kind, id, reason)
         const denied = updateEmbedStatus("Denied", reason, 0xe74c3c)
         await updateChannelMessage(channelId, messageId, { embeds: denied, components: [] })
@@ -142,9 +141,9 @@ export async function POST(request: NextRequest) {
           console.error("Failed to update message after denial error:", e)
         }
       }
-    })
+    })()
 
-    return respondUpdate(processing, [])
+    return respondDefer()
   }
 
   return new Response("Unhandled interaction type", { status: 400 })
