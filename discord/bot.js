@@ -19,15 +19,21 @@ async function ensureVerificationMessage() {
 
   try {
     const messages = (await rest.get(`${Routes.channelMessages(verificationChannelId)}?limit=50`)) || []
-    const alreadyPosted = Array.isArray(messages) && messages.some(
-      (message) =>
-        message.author?.bot &&
-        message.embeds?.some((embed) => embed.title?.includes("Welcome to pray4me"))
-    )
 
-    if (alreadyPosted) {
-      console.log("Verification message already exists; skipping.")
-      return
+    // Remove any previous verification embeds from this bot so the latest copy is reposted.
+    if (Array.isArray(messages)) {
+      for (const message of messages) {
+        if (
+          message.author?.bot &&
+          message.embeds?.some((embed) => embed.title?.includes("Welcome to pray4me"))
+        ) {
+          try {
+            await rest.delete(Routes.channelMessage(verificationChannelId, message.id))
+          } catch (err) {
+            console.error("Failed to delete old verification message:", err)
+          }
+        }
+      }
     }
 
     await rest.post(Routes.channelMessages(verificationChannelId), {

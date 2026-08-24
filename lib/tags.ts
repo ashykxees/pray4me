@@ -32,6 +32,14 @@ export async function getUserTags(userId: string): Promise<Tag[]> {
       color: "bg-yellow-100 text-yellow-800 border-yellow-200",
       description: "Site founder",
     })
+    // The founder is trusted by default; other users must still verify through Discord.
+    tags.push({
+      id: "verified",
+      label: "Verified",
+      icon: "verified",
+      color: "bg-blue-100 text-blue-800 border-blue-200",
+      description: "Verified community member",
+    })
   }
 
   if (user.prayerRequests.length > 0) {
@@ -58,13 +66,15 @@ export async function getUserTags(userId: string): Promise<Tag[]> {
   if (discordAccount?.providerAccountId) {
     const member = await getGuildMember(discordAccount.providerAccountId).catch(() => null)
     if (member) {
-      tags.push({
-        id: "verified",
-        label: "Verified",
-        icon: "verified",
-        color: "bg-blue-100 text-blue-800 border-blue-200",
-        description: "Member of the Discord server",
-      })
+      if (!tags.some((t) => t.id === "verified")) {
+        tags.push({
+          id: "verified",
+          label: "Verified",
+          icon: "verified",
+          color: "bg-blue-100 text-blue-800 border-blue-200",
+          description: "Member of the Discord server",
+        })
+      }
 
       const staffRoleId = process.env.DISCORD_STAFF_ROLE_ID
       if (staffRoleId && member.roles.includes(staffRoleId)) {
