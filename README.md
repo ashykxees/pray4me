@@ -71,12 +71,14 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Deploy
 
-Set all `.env` variables for production, then build:
+Set all `.env` variables for production. For Railway/Render, make sure `DATABASE_URL=file:./dev.db` is set and the start command runs migrations before starting the server:
 
 ```bash
 npm run build
 npm start
 ```
+
+`npm start` now runs `prisma migrate deploy && next start` so the SQLite database is created automatically.
 
 ## Environment variables
 
