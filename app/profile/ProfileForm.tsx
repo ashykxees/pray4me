@@ -1,12 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { updateProfile } from "./actions"
 import { SongAutocomplete } from "./SongAutocomplete"
 import { ProfileTags } from "@/app/components/ProfileTags"
 import type { Tag } from "@/lib/tags"
 import { Save, UserCircle2, FileText } from "lucide-react"
+
+const STORAGE_KEY = "profileDraft"
+
+function isProfileEmpty(u: {
+  image?: string | null
+  bio?: string | null
+  favoriteSong?: string | null
+}) {
+  return !u.image && !u.bio && !u.favoriteSong
+}
 
 export function ProfileForm({
   user,
@@ -40,10 +50,67 @@ export function ProfileForm({
     favoriteSongPreviewUrl: user.favoriteSongPreviewUrl || "",
   })
   const [message, setMessage] = useState("")
+  const restoredRef = useRef(false)
 
   function updateSong(update: Partial<typeof song>) {
     setSong((prev) => ({ ...prev, ...update }))
   }
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  // Restore draft from localStorage when the server profile is empty.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (restoredRef.current) return
+    if (!isProfileEmpty(user)) return
+
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return
+
+    const saved = JSON.parse(raw) as {
+      image?: string
+      bio?: string
+      favoriteSong?: string
+      favoriteSongUrl?: string
+      favoriteSongPreviewUrl?: string
+    }
+    if (!saved.image && !saved.bio && !saved.favoriteSong) return
+
+    restoredRef.current = true
+    setImage(saved.image || "")
+    setBio(saved.bio || "")
+    setSong({
+      favoriteSong: saved.favoriteSong || "",
+      favoriteSongUrl: saved.favoriteSongUrl || "",
+      favoriteSongPreviewUrl: saved.favoriteSongPreviewUrl || "",
+    })
+
+    async function restore() {
+      const data = new FormData()
+      data.set("image", saved.image || "")
+      data.set("bio", saved.bio || "")
+      data.set("favoriteSong", saved.favoriteSong || "")
+      data.set("favoriteSongUrl", saved.favoriteSongUrl || "")
+      data.set("favoriteSongPreviewUrl", saved.favoriteSongPreviewUrl || "")
+      try {
+        await updateProfile(data)
+        setMessage("Profile restored.")
+        router.refresh()
+      } catch (err: unknown) {
+        setMessage(err instanceof Error ? err.message : "Could not restore profile.")
+      }
+    }
+    void restore()
+  }, [user, router])
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Save draft to localStorage as the user edits
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ image, bio, favoriteSong: song.favoriteSong, favoriteSongUrl: song.favoriteSongUrl, favoriteSongPreviewUrl: song.favoriteSongPreviewUrl })
+    )
+  }, [image, bio, song])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
