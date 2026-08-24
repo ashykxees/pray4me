@@ -3,11 +3,22 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
-const databaseUrl =
-  process.env.DATABASE_URL ||
-  (process.env.RAILWAY_VOLUME_MOUNT_PATH
-    ? `file:${process.env.RAILWAY_VOLUME_MOUNT_PATH.replace(/\/$/, "")}/dev.db`
-    : "file:./dev.db");
+function resolveDatabaseUrl(): string {
+  if (process.env.DATABASE_URL?.trim()) {
+    return process.env.DATABASE_URL.trim();
+  }
+
+  const mount = process.env.RAILWAY_VOLUME_MOUNT_PATH?.replace(/\/$/, "");
+  if (mount) {
+    return `file:${mount}/dev.db`;
+  }
+
+  return "file:./dev.db";
+}
+
+// Prisma's schema uses env("DATABASE_URL"), so set a fallback here for
+// environments (like Railway build/deploy) where the variable is missing or empty.
+process.env.DATABASE_URL = resolveDatabaseUrl();
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -16,6 +27,6 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: databaseUrl,
+    url: process.env.DATABASE_URL,
   },
 });
