@@ -178,7 +178,7 @@ export function OnboardingForm() {
         required
       />
       {tooYoung && (
-        <p className="rounded-2xl bg-red-100 p-4 text-red-800">
+        <p className="rounded-2xl border border-brand-warm-tan bg-white p-4 text-brand-deep-brown">
           You must be 13 or older to create an account with us.
         </p>
       )}
@@ -203,12 +203,12 @@ export function OnboardingForm() {
         disabled={!form.country}
       />
       {form.country.trim() && !validCountry && (
-        <p className="rounded-2xl bg-red-100 p-4 text-red-800">
+        <p className="rounded-2xl border border-brand-warm-tan bg-white p-4 text-brand-deep-brown">
           Please select a country from the list.
         </p>
       )}
       {form.state.trim() && validCountry && !validState && (
-        <p className="rounded-2xl bg-red-100 p-4 text-red-800">
+        <p className="rounded-2xl border border-brand-warm-tan bg-white p-4 text-brand-deep-brown">
           Please select a state / province from the list.
         </p>
       )}
@@ -224,7 +224,7 @@ export function OnboardingForm() {
         required
       />
       {form.phone.trim() && !phoneValidation.valid && (
-        <p className="rounded-2xl bg-red-100 p-4 text-red-800">
+        <p className="rounded-2xl border border-brand-warm-tan bg-white p-4 text-brand-deep-brown">
           Please enter a valid phone number for {form.country || "your country"}.
         </p>
       )}
@@ -325,7 +325,7 @@ export function OnboardingForm() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {steps[step]}
-          {error && <p className="rounded-2xl bg-red-100 p-4 text-red-800">{error}</p>}
+          {error && <p className="rounded-2xl border border-brand-warm-tan bg-white p-4 text-brand-deep-brown">{error}</p>}
           <div className="flex justify-between pt-4">
             {step > 0 ? (
               <button

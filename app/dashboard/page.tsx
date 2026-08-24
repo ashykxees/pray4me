@@ -64,9 +64,9 @@ export default async function DashboardPage() {
           {notifications.map((n) => (
             <div
               key={n.id}
-              className="flex items-start gap-3 rounded-2xl border-l-4 border-brand-rose bg-red-50 p-4 text-red-900 shadow-sm"
+              className="flex items-start gap-3 rounded-2xl border-l-4 border-brand-warm-tan bg-white p-4 text-brand-deep-brown shadow-sm"
             >
-              <Bell className="mt-0.5 h-5 w-5 shrink-0 text-brand-rose" />
+              <Bell className="mt-0.5 h-5 w-5 shrink-0 text-brand-warm-tan" />
               {n.message}
             </div>
           ))}

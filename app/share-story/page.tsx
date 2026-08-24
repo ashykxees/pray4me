@@ -106,7 +106,7 @@ export default function ShareStoryPage() {
             placeholder="Paste your booked call link here"
             required
           />
-          {error && <p className="rounded-2xl bg-red-100 p-4 text-red-800">{error}</p>}
+          {error && <p className="rounded-2xl border border-brand-warm-tan bg-white p-4 text-brand-deep-brown">{error}</p>}
           <button type="submit" className="btn-primary">
             <Send className="h-4 w-4" />
             Submit

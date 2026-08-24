@@ -225,10 +225,10 @@ export function ProfileForm({
                   <span
                     className={`badge ${
                       pr.status === "APPROVED"
-                        ? "bg-green-100 text-green-800"
+                        ? "bg-brand-warm-tan/30 text-brand-deep-brown"
                         : pr.status === "DENIED"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-brand-beige text-brand-brown"
+                        ? "bg-brand-deep-brown text-white"
+                        : "bg-brand-warm-beige text-brand-deep-brown"
                     }`}
                   >
                     {pr.status}
@@ -236,7 +236,7 @@ export function ProfileForm({
                 </div>
                 <p className="mt-2 text-sm text-brand-brown line-clamp-2">{pr.prayer}</p>
                 {pr.status === "DENIED" && pr.denialReason && (
-                  <p className="mt-2 text-sm text-red-700">Reason: {pr.denialReason}</p>
+                  <p className="mt-2 text-sm text-brand-muted-brown">Reason: {pr.denialReason}</p>
                 )}
                 <p className="mt-2 text-xs text-brand-sand">
                   {pr.reactions.length} praying for you

@@ -84,7 +84,7 @@ export function CategoryView({
           placeholder="What's on your heart?"
           required
         />
-        {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
+        {error && <p className="mt-2 text-sm text-brand-muted-brown">{error}</p>}
         <button type="submit" className="btn-primary mt-4">
           <Send className="h-4 w-4" />
           Post

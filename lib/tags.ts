@@ -11,6 +11,11 @@ export type Tag = {
 
 const FOUNDER_EMAIL = process.env.FOUNDER_EMAIL || "dev.jake317@gmail.com"
 
+const badgeBase = "bg-[#f4e8d6] text-[#3b2117] border-[#c99a6b]"
+const badgeMuted = "bg-[#d8c0a3]/40 text-[#3b2117] border-[#c99a6b]"
+const badgeAccent = "bg-[#e6b58a]/30 text-[#3b2117] border-[#c99a6b]"
+const badgeDark = "bg-[#3b2117] text-[#f4e8d6] border-[#c99a6b]"
+
 export async function getUserTags(userId: string): Promise<Tag[]> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -29,15 +34,14 @@ export async function getUserTags(userId: string): Promise<Tag[]> {
       id: "crown",
       label: "Founder",
       icon: "crown",
-      color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      color: badgeAccent,
       description: "Site founder",
     })
-    // The founder is trusted by default; other users must still verify through Discord.
     tags.push({
       id: "verified",
       label: "Verified",
       icon: "verified",
-      color: "bg-blue-100 text-blue-800 border-blue-200",
+      color: badgeBase,
       description: "Verified community member",
     })
   }
@@ -47,7 +51,7 @@ export async function getUserTags(userId: string): Promise<Tag[]> {
       id: "pray",
       label: "Prayer",
       icon: "pray",
-      color: "bg-rose-100 text-rose-800 border-rose-200",
+      color: badgeBase,
       description: "Submitted a prayer request",
     })
   }
@@ -57,7 +61,7 @@ export async function getUserTags(userId: string): Promise<Tag[]> {
       id: "cross",
       label: "Testimony",
       icon: "cross",
-      color: "bg-amber-100 text-amber-800 border-amber-200",
+      color: badgeAccent,
       description: "Shared a testimony on-call",
     })
   }
@@ -71,7 +75,7 @@ export async function getUserTags(userId: string): Promise<Tag[]> {
           id: "verified",
           label: "Verified",
           icon: "verified",
-          color: "bg-blue-100 text-blue-800 border-blue-200",
+          color: badgeBase,
           description: "Member of the Discord server",
         })
       }
@@ -82,7 +86,7 @@ export async function getUserTags(userId: string): Promise<Tag[]> {
           id: "shield",
           label: "Staff",
           icon: "shield",
-          color: "bg-purple-100 text-purple-800 border-purple-200",
+          color: badgeMuted,
           description: "Discord staff member",
         })
       }
@@ -93,7 +97,7 @@ export async function getUserTags(userId: string): Promise<Tag[]> {
           id: "bible",
           label: "Pastor",
           icon: "bible",
-          color: "bg-emerald-100 text-emerald-800 border-emerald-200",
+          color: badgeDark,
           description: "Discord pastor",
         })
       }

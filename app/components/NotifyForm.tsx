@@ -30,21 +30,21 @@ export function NotifyForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Enter your email"
-          className="flex-1 rounded-2xl border border-white/15 bg-white/10 px-5 py-3.5 text-white placeholder-white/50 outline-none backdrop-blur-sm transition focus:border-purple-400 focus:bg-white/15 focus:ring-2 focus:ring-purple-400/30"
+          className="flex-1 rounded-2xl border border-[#c99a6b]/60 bg-[#4a2b1d] px-5 py-3.5 text-[#f4e8d6] placeholder-[#d8c0a3] outline-none transition focus:border-[#c99a6b] focus:bg-[#4a2b1d] focus:ring-2 focus:ring-[#c99a6b]/40"
         />
         <button
           type="submit"
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-500 px-6 py-3.5 font-semibold text-white shadow-lg shadow-purple-500/25 transition hover:scale-[1.02] active:scale-[0.98]"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#c99a6b] px-6 py-3.5 font-semibold text-[#3b2117] shadow-md transition hover:bg-[#e6b58a] hover:scale-[1.02] active:scale-[0.98]"
         >
           <Lock className="h-4 w-4" />
           Notify me
         </button>
       </form>
       {status === "saved" && (
-        <p className="mt-3 text-sm text-emerald-300">You are on the list — we will email you when Pray4Me unlocks.</p>
+        <p className="mt-3 text-sm text-[#e6b58a]">You are on the list — we will email you when Pray4Me unlocks.</p>
       )}
       {status === "invalid" && (
-        <p className="mt-3 text-sm text-rose-300">Please enter a valid email.</p>
+        <p className="mt-3 text-sm text-[#e6b58a]">Please enter a valid email.</p>
       )}
     </div>
   )
