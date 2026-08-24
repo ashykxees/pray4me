@@ -4,7 +4,12 @@ import type { PrismaClient } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
 
-const publicKey = process.env.DISCORD_PUBLIC_KEY || ""
+const publicKey = process.env.DISCORD_PUBLIC_KEY?.trim() || ""
+if (!publicKey) {
+  console.error("DISCORD_PUBLIC_KEY is not set. Discord interactions will fail with 401.")
+} else {
+  console.log("DISCORD_PUBLIC_KEY loaded (prefix):", publicKey.slice(0, 8))
+}
 
 type Embed = {
   title?: string
@@ -20,7 +25,7 @@ export async function POST(request: NextRequest) {
 
   const isValid = await verifyKey(body, signature, timestamp, publicKey)
   if (!isValid) {
-    console.error("Invalid Discord signature")
+    console.error("Invalid Discord signature — check that DISCORD_PUBLIC_KEY matches the key in your Discord app's General Information.")
     return new Response("Invalid request signature", { status: 401 })
   }
 
