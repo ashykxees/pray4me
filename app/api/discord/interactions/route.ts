@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server"
+import { after } from "next/server"
 import { verifyKey, InteractionType, InteractionResponseType } from "discord-interactions"
 import { prisma } from "@/lib/prisma"
+import { updateChannelMessage } from "@/lib/discord"
 
 export const dynamic = "force-dynamic"
 
@@ -30,18 +32,13 @@ export async function POST(request: NextRequest) {
 
   const message = (interaction.message as Record<string, unknown>) || {}
   const originalEmbeds = (message.embeds as Embed[]) || []
+  const channelId = (interaction.channel_id as string) || ""
+  const messageId = (message.id as string) || ""
 
   function respondUpdate(updatedEmbeds: Embed[], components: unknown[] = []) {
     return Response.json({
       type: InteractionResponseType.UPDATE_MESSAGE,
       data: { embeds: updatedEmbeds, components },
-    })
-  }
-
-  function ephemeral(content: string) {
-    return Response.json({
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: { content, flags: 64 },
     })
   }
 
@@ -85,6 +82,15 @@ export async function POST(request: NextRequest) {
     return [embed]
   }
 
+  async function finalizeMessage(embeds: Embed[], components: unknown[] = []) {
+    if (!channelId || !messageId) return
+    try {
+      await updateChannelMessage(channelId, messageId, { embeds, components })
+    } catch (err) {
+      console.error("Failed to update Discord message:", err)
+    }
+  }
+
   async function notifyPrayerDenial(id: string, reason: string) {
     const pr = await prisma.prayerRequest.findUnique({
       where: { id },
@@ -126,19 +132,21 @@ export async function POST(request: NextRequest) {
     const [kind, action, id] = ((data.custom_id as string) || "").split(":")
 
     if (action === "pass") {
-      try {
-        if (kind === "prayer") {
-          await prisma.prayerRequest.update({ where: { id }, data: { status: "APPROVED" } })
-        } else if (kind === "story") {
-          await prisma.storyRequest.update({ where: { id }, data: { status: "APPROVED" } })
-        } else if (kind === "profile") {
-          await prisma.user.update({ where: { id }, data: { role: "approved" } })
+      after(async () => {
+        try {
+          if (kind === "prayer") {
+            await prisma.prayerRequest.update({ where: { id }, data: { status: "APPROVED" } })
+          } else if (kind === "story") {
+            await prisma.storyRequest.update({ where: { id }, data: { status: "APPROVED" } })
+          } else if (kind === "profile") {
+            await prisma.user.update({ where: { id }, data: { role: "approved" } })
+          }
+          await finalizeMessage(updateEmbedStatus("Approved", undefined, 0x2ecc71), [])
+        } catch (err) {
+          console.error("Failed to approve submission:", err)
         }
-        return respondUpdate(updateEmbedStatus("Approved", undefined, 0x2ecc71))
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Unknown error"
-        return ephemeral(`Failed to approve: ${message}`)
-      }
+      })
+      return respondUpdate(updateEmbedStatus("Processing...", undefined, 0xf1c40f), [])
     }
 
     if (action === "deny") {
@@ -154,28 +162,30 @@ export async function POST(request: NextRequest) {
     const reasonRow = components[0]?.components?.[0]
     const reason = reasonRow?.value || "No reason given"
 
-    try {
-      if (kind === "prayer") {
-        await prisma.prayerRequest.update({
-          where: { id },
-          data: { status: "DENIED", denialReason: reason },
-        })
-        await notifyPrayerDenial(id, reason)
-      } else if (kind === "story") {
-        await prisma.storyRequest.update({
-          where: { id },
-          data: { status: "DENIED", denialReason: reason },
-        })
-        await notifyStoryDenial(id, reason)
-      } else if (kind === "profile") {
-        await prisma.user.update({ where: { id }, data: { role: "denied" } })
-        await notifyProfileDenial(id, reason)
+    after(async () => {
+      try {
+        if (kind === "prayer") {
+          await prisma.prayerRequest.update({
+            where: { id },
+            data: { status: "DENIED", denialReason: reason },
+          })
+          await notifyPrayerDenial(id, reason)
+        } else if (kind === "story") {
+          await prisma.storyRequest.update({
+            where: { id },
+            data: { status: "DENIED", denialReason: reason },
+          })
+          await notifyStoryDenial(id, reason)
+        } else if (kind === "profile") {
+          await prisma.user.update({ where: { id }, data: { role: "denied" } })
+          await notifyProfileDenial(id, reason)
+        }
+        await finalizeMessage(updateEmbedStatus("Denied", reason, 0xe74c3c), [])
+      } catch (err) {
+        console.error("Failed to deny submission:", err)
       }
-      return respondUpdate(updateEmbedStatus("Denied", reason, 0xe74c3c))
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Unknown error"
-      return ephemeral(`Failed to deny: ${message}`)
-    }
+    })
+    return respondUpdate(updateEmbedStatus("Processing...", reason, 0xf1c40f), [])
   }
 
   return new Response("Unhandled interaction type", { status: 400 })
