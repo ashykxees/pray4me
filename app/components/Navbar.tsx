@@ -13,6 +13,7 @@ export async function Navbar() {
     { href: "/dashboard/prayer", label: "Prayer" },
     { href: "/stories", label: "Stories" },
     { href: "/live", label: "Live" },
+    { href: "/store", label: "Store" },
   ]
 
   return (
