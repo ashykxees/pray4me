@@ -9,6 +9,9 @@
     "migrate": "prisma migrate deploy",
     "lint": "eslint"
   },
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
     "@discordjs/rest": "^2.6.3",
