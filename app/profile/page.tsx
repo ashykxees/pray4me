@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { ProfileForm } from "./ProfileForm"
+import { getUserTags } from "@/lib/tags"
 
 export default async function ProfilePage() {
   const session = await auth()
@@ -23,5 +24,7 @@ export default async function ProfilePage() {
     redirect("/onboarding")
   }
 
-  return <ProfileForm user={user} />
+  const tags = await getUserTags(user.id)
+
+  return <ProfileForm user={user} tags={tags} />
 }

@@ -4,10 +4,13 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { updateProfile } from "./actions"
 import { SongAutocomplete } from "./SongAutocomplete"
+import { ProfileTags } from "@/app/components/ProfileTags"
+import type { Tag } from "@/lib/tags"
 import { Save, UserCircle2, FileText } from "lucide-react"
 
 export function ProfileForm({
   user,
+  tags,
 }: {
   user: {
     firstName?: string | null
@@ -26,6 +29,7 @@ export function ProfileForm({
       reactions: { id: string }[]
     }[]
   }
+  tags: Tag[]
 }) {
   const router = useRouter()
   const [image, setImage] = useState(user.image || "")
@@ -78,6 +82,12 @@ export function ProfileForm({
             </div>
           )}
           <div className="flex-1">
+            <div className="mb-2">
+              <h2 className="text-2xl font-semibold text-brand-brown-dark">
+                {user.firstName || user.name || "Friend"}
+              </h2>
+              <ProfileTags tags={tags} />
+            </div>
             <label className="label flex items-center gap-2">
               <UserCircle2 className="h-4 w-4" />
               Profile Picture URL

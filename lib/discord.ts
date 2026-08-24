@@ -9,6 +9,27 @@ export function isDiscordConfigured() {
   return !!rest
 }
 
+type GuildMember = {
+  user?: { id: string }
+  roles: string[]
+}
+
+export async function getGuildMember(userId: string): Promise<GuildMember | null> {
+  const guildId = process.env.DISCORD_GUILD_ID
+  if (!rest || !guildId) return null
+
+  try {
+    const member = (await rest.get(Routes.guildMember(guildId, userId))) as GuildMember
+    return member
+  } catch (err: unknown) {
+    if (err && typeof err === "object" && "status" in err && (err as { status: number }).status === 404) {
+      return null
+    }
+    console.error("Failed to fetch Discord guild member:", err)
+    return null
+  }
+}
+
 type ActionRow = {
   type: number
   components: { type: number; style: number; label: string; custom_id: string }[]

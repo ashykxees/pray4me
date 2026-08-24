@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { getUserTags } from "@/lib/tags"
+import { ProfileTags } from "@/app/components/ProfileTags"
 import { redirect } from "next/navigation"
 import { Heart, BookOpen, HelpCircle, MessageCircle, Bell, PlusCircle } from "lucide-react"
 
@@ -17,6 +19,8 @@ export default async function DashboardPage() {
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } })
   if (!user?.onboarded) redirect("/onboarding")
+
+  const tags = await getUserTags(user.id)
 
   const [notifications, devotional, personal, deep, hard] = await Promise.all([
     prisma.notification.findMany({
@@ -45,6 +49,9 @@ export default async function DashboardPage() {
             Welcome back, {user.firstName || user.name || "friend"}.
             {user.age && <span className="ml-2 rounded-full bg-brand-beige px-2.5 py-0.5 text-xs font-semibold text-brand-brown">{ageRange(user.age)}</span>}
           </p>
+          <div className="mt-2">
+            <ProfileTags tags={tags} />
+          </div>
         </div>
         <Link href="/dashboard/prayer/new" className="btn-primary">
           <PlusCircle className="h-4 w-4" />
