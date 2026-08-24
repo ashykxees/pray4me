@@ -1,12 +1,14 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
-import { auth } from "@/auth"
+import { useSession } from "next-auth/react"
 import { SignInButton } from "./SignInButton"
 import { SignOutButton } from "./SignOutButton"
 import { Menu } from "lucide-react"
 
-export async function Navbar() {
-  const session = await auth()
+export function Navbar() {
+  const { data: session } = useSession()
 
   const links = [
     { href: "/dashboard", label: "Dashboard" },
@@ -49,10 +51,12 @@ export async function Navbar() {
           )}
         </nav>
 
-        {/* Mobile nav toggle rendered as a simple link list for now */}
         <div className="flex items-center gap-2 md:hidden">
           {session?.user ? <SignOutButton /> : <SignInButton />}
-          <button aria-label="Menu" className="rounded-full p-2 text-brand-brown hover:bg-brand-beige">
+          <button
+            aria-label="Menu"
+            className="rounded-full p-2 text-brand-brown hover:bg-brand-beige"
+          >
             <Menu className="h-6 w-6" />
           </button>
         </div>
