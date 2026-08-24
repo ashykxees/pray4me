@@ -21,6 +21,7 @@ export function SearchSelect({
 }: SearchSelectProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
+  const selectedRef = useRef(false)
   const listboxId = useId()
 
   const filtered = useMemo(() => {
@@ -30,6 +31,7 @@ export function SearchSelect({
   }, [options, value])
 
   const select = (option: string) => {
+    selectedRef.current = true
     onChange(option)
     setOpen(false)
   }
@@ -40,7 +42,19 @@ export function SearchSelect({
   }
 
   const handleBlur = () => {
-    setTimeout(() => setOpen(false), 120)
+    setTimeout(() => {
+      setOpen(false)
+      if (selectedRef.current) {
+        selectedRef.current = false
+        return
+      }
+      const exact = options.find((o) => o.toLowerCase() === value.trim().toLowerCase())
+      if (exact) {
+        onChange(exact)
+      } else if (filtered.length > 0) {
+        onChange(filtered[0])
+      }
+    }, 120)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
