@@ -7,7 +7,7 @@ import { completeOnboarding } from "./actions"
 import { ChevronLeft, ChevronRight, Check } from "lucide-react"
 import { SearchSelect } from "@/app/components/SearchSelect"
 import { countries, statesByCountry } from "@/lib/location-data"
-import { isPhoneLike } from "@/lib/phone"
+import { validatePhone } from "@/lib/phone"
 
 const purposeOptions = ["Pray for others", "Ask for prayer", "Praise God"]
 
@@ -72,7 +72,8 @@ export function OnboardingForm() {
 
   const ageNum = Number(form.age)
   const tooYoung = ageNum > 0 && ageNum < 13
-  const phoneCheck = isPhoneLike(form.phone)
+  const phoneValidation = validatePhone(form.phone, form.country)
+  const phoneCheck = phoneValidation.valid
   const stateOptions = statesByCountry[form.country]
   const validCountry = countries.includes(form.country)
   const validState = stateOptions
@@ -198,9 +199,9 @@ export function OnboardingForm() {
         placeholder="Phone number"
         required
       />
-      {form.phone.trim() && !phoneCheck && (
+      {form.phone.trim() && !phoneValidation.valid && (
         <p className="rounded-2xl bg-red-100 p-4 text-red-800">
-          Please enter a valid phone number.
+          Please enter a valid phone number for {form.country || "your country"}.
         </p>
       )}
     </div>,
