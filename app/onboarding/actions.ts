@@ -42,6 +42,11 @@ export async function completeOnboarding(formData: FormData) {
       return { error: `Please enter a valid phone number for ${country}.` }
     }
 
+    const existingUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { onboarded: true },
+    })
+
     const user = await prisma.user.upsert({
       where: { id: session.user.id },
       update: {
@@ -70,7 +75,7 @@ export async function completeOnboarding(formData: FormData) {
       },
     })
 
-    if (isDiscordConfigured()) {
+    if (isDiscordConfigured() && !existingUser?.onboarded) {
       try {
         await sendProfileModeration({
           id: user.id,
