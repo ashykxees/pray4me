@@ -13,16 +13,19 @@ type Embed = {
 }
 
 export async function POST(request: NextRequest) {
+  const start = Date.now()
   const signature = request.headers.get("x-signature-ed25519") || ""
   const timestamp = request.headers.get("x-signature-timestamp") || ""
   const body = await request.text()
 
   const isValid = await verifyKey(body, signature, timestamp, publicKey)
   if (!isValid) {
+    console.error("Invalid Discord signature")
     return new Response("Invalid request signature", { status: 401 })
   }
 
   const interaction: Record<string, unknown> = JSON.parse(body)
+  console.log("Discord interaction received:", interaction.type, interaction.id)
 
   if (interaction.type === InteractionType.PING) {
     return Response.json({ type: InteractionResponseType.PONG })
@@ -33,8 +36,11 @@ export async function POST(request: NextRequest) {
   const channelId = (interaction.channel_id as string) || ""
   const messageId = (message.id as string) || ""
 
-  function respondDefer() {
-    return Response.json({ type: InteractionResponseType.DEFERRED_UPDATE_MESSAGE })
+  function respondUpdate(updatedEmbeds: Embed[], components: unknown[] = []) {
+    return Response.json({
+      type: InteractionResponseType.UPDATE_MESSAGE,
+      data: { embeds: updatedEmbeds, components },
+    })
   }
 
   function modal(kind: string, id: string) {
@@ -82,13 +88,12 @@ export async function POST(request: NextRequest) {
     const [kind, action, id] = ((data.custom_id as string) || "").split(":")
 
     if (action === "pass") {
-      // Acknowledge immediately so Discord never times out, then update the message in the background.
+      const processing = updateEmbedStatus("Processing...", undefined, 0xf1c40f)
+
       void (async () => {
         try {
-          const { updateChannelMessage } = await import("@/lib/discord")
-          const processing = updateEmbedStatus("Processing...", undefined, 0xf1c40f)
-          await updateChannelMessage(channelId, messageId, { embeds: processing, components: [] })
           const { prisma } = await import("@/lib/prisma")
+          const { updateChannelMessage } = await import("@/lib/discord")
           await approveSubmission(prisma, kind, id)
           const approved = updateEmbedStatus("Approved", undefined, 0x2ecc71)
           await updateChannelMessage(channelId, messageId, { embeds: approved, components: [] })
@@ -104,7 +109,8 @@ export async function POST(request: NextRequest) {
         }
       })()
 
-      return respondDefer()
+      console.log("Responding to pass interaction in", Date.now() - start, "ms")
+      return respondUpdate(processing, [])
     }
 
     if (action === "deny") {
@@ -121,13 +127,12 @@ export async function POST(request: NextRequest) {
     const reasonRow = components[0]?.components?.[0]
     const reason = reasonRow?.value || "No reason given"
 
-    // Acknowledge immediately, then patch the original message once the DB work is done.
+    const processing = updateEmbedStatus("Processing...", reason, 0xf1c40f)
+
     void (async () => {
       try {
-        const { updateChannelMessage } = await import("@/lib/discord")
-        const processing = updateEmbedStatus("Processing...", reason, 0xf1c40f)
-        await updateChannelMessage(channelId, messageId, { embeds: processing, components: [] })
         const { prisma } = await import("@/lib/prisma")
+        const { updateChannelMessage } = await import("@/lib/discord")
         await denySubmission(prisma, kind, id, reason)
         const denied = updateEmbedStatus("Denied", reason, 0xe74c3c)
         await updateChannelMessage(channelId, messageId, { embeds: denied, components: [] })
@@ -143,7 +148,8 @@ export async function POST(request: NextRequest) {
       }
     })()
 
-    return respondDefer()
+    console.log("Responding to modal submit in", Date.now() - start, "ms")
+    return respondUpdate(processing, [])
   }
 
   return new Response("Unhandled interaction type", { status: 400 })
