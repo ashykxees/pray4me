@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { updateProfile } from "./actions"
-import { Save, UserCircle2, Music, FileText } from "lucide-react"
+import { SongAutocomplete } from "./SongAutocomplete"
+import { Save, UserCircle2, FileText } from "lucide-react"
 
 export function ProfileForm({
   user,
@@ -14,6 +15,8 @@ export function ProfileForm({
     image?: string | null
     bio?: string | null
     favoriteSong?: string | null
+    favoriteSongUrl?: string | null
+    favoriteSongPreviewUrl?: string | null
     prayerRequests: {
       id: string
       title: string
@@ -27,15 +30,25 @@ export function ProfileForm({
   const router = useRouter()
   const [image, setImage] = useState(user.image || "")
   const [bio, setBio] = useState(user.bio || "")
-  const [favoriteSong, setFavoriteSong] = useState(user.favoriteSong || "")
+  const [song, setSong] = useState({
+    favoriteSong: user.favoriteSong || "",
+    favoriteSongUrl: user.favoriteSongUrl || "",
+    favoriteSongPreviewUrl: user.favoriteSongPreviewUrl || "",
+  })
   const [message, setMessage] = useState("")
+
+  function updateSong(update: Partial<typeof song>) {
+    setSong((prev) => ({ ...prev, ...update }))
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const data = new FormData()
     data.set("image", image)
     data.set("bio", bio)
-    data.set("favoriteSong", favoriteSong)
+    data.set("favoriteSong", song.favoriteSong)
+    data.set("favoriteSongUrl", song.favoriteSongUrl)
+    data.set("favoriteSongPreviewUrl", song.favoriteSongPreviewUrl)
     try {
       await updateProfile(data)
       setMessage("Profile saved.")
@@ -93,19 +106,12 @@ export function ProfileForm({
           />
         </div>
 
-        <div>
-          <label className="label flex items-center gap-2">
-            <Music className="h-4 w-4" />
-            Favorite Worship Song
-          </label>
-          <input
-            type="text"
-            value={favoriteSong}
-            onChange={(e) => setFavoriteSong(e.target.value)}
-            className="input"
-            placeholder="Song title / artist"
-          />
-        </div>
+        <SongAutocomplete
+          value={song.favoriteSong}
+          previewUrl={song.favoriteSongPreviewUrl}
+          trackUrl={song.favoriteSongUrl}
+          onChange={updateSong}
+        />
 
         {message && (
           <p className="rounded-2xl bg-brand-beige p-4 text-brand-brown-dark">

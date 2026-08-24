@@ -1,7 +1,7 @@
 import { CountryCode, isValidPhoneNumber, parsePhoneNumberFromString } from "libphonenumber-js"
 import { countryToIso } from "./country-iso"
 
-function resolveCountry(country?: string): CountryCode | undefined {
+export function resolveCountry(country?: string): CountryCode | undefined {
   if (!country) return undefined
 
   const exact = countryToIso[country]
@@ -18,7 +18,7 @@ function resolveCountry(country?: string): CountryCode | undefined {
 export function validatePhone(
   phone: string,
   country?: string
-): { valid: boolean; formatted?: string } {
+): { valid: boolean; formatted?: string; countryCode?: string } {
   const raw = phone.trim()
   if (!raw) return { valid: false }
 
@@ -26,15 +26,15 @@ export function validatePhone(
 
   try {
     const valid = iso ? isValidPhoneNumber(raw, iso) : isValidPhoneNumber(raw)
-    if (!valid) return { valid: false }
+    if (!valid) return { valid: false, countryCode: iso }
 
     const parsed = iso
       ? parsePhoneNumberFromString(raw, iso)
       : parsePhoneNumberFromString(raw)
 
-    return { valid: true, formatted: parsed?.formatInternational() || raw }
+    return { valid: true, formatted: parsed?.formatInternational() || raw, countryCode: iso }
   } catch {
-    return { valid: false }
+    return { valid: false, countryCode: iso }
   }
 }
 
