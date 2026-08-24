@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { togglePrayerReaction } from "./actions"
-import { Heart } from "lucide-react"
+import { Heart, MessageSquareWarning } from "lucide-react"
 
 export function PrayerList({
   requests,
@@ -36,34 +36,51 @@ export function PrayerList({
   }
 
   return (
-    <div className="space-y-4">
-      {error && <p className="rounded-lg bg-red-100 p-3 text-red-800">{error}</p>}
+    <div className="space-y-5">
+      {error && (
+        <p className="flex items-center gap-2 rounded-2xl bg-red-100 p-4 text-red-800">
+          <MessageSquareWarning className="h-5 w-5" />
+          {error}
+        </p>
+      )}
       {requests.length === 0 ? (
-        <p className="text-brand-sand">No prayer requests yet in your age group.</p>
+        <div className="card text-center">
+          <p className="text-brand-brown">No prayer requests yet in your age group.</p>
+          <p className="mt-2 text-sm text-brand-sand">Be the first to share a prayer.</p>
+        </div>
       ) : (
         requests.map((r) => {
           const hasPrayed = r.reactions.some((reaction) => reaction.userId === currentUserId)
           const count = r.reactions.length
           return (
-            <div key={r.id} className="rounded-2xl bg-white p-6 shadow-md">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="font-semibold text-brand-brown-dark">
-                  {r.user.firstName || "Anonymous"} {r.user.age ? `· ${r.user.age}` : ""}
-                </span>
-                <span className="text-xs text-brand-sand">
-                  {new Date(r.createdAt).toLocaleDateString()}
-                </span>
+            <div key={r.id} className="card">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-beige font-heading text-lg font-semibold text-brand-brown">
+                    {(r.user.firstName || "A")[0]}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-brand-brown-dark">
+                      {r.user.firstName || "Anonymous"}
+                    </p>
+                    <p className="text-xs text-brand-sand">
+                      {r.user.age ? `Age ${r.user.age}` : ""} · {new Date(r.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <p className="text-brand-brown-dark">{r.prayer}</p>
+              <p className="whitespace-pre-wrap text-brand-brown-dark">{r.prayer}</p>
               {r.explanation && (
-                <p className="mt-2 text-sm text-brand-sand">{r.explanation}</p>
+                <p className="mt-3 rounded-2xl bg-brand-beige/50 p-3 text-sm text-brand-brown">
+                  {r.explanation}
+                </p>
               )}
               <button
                 onClick={() => handlePray(r.id)}
-                className={`mt-4 flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`mt-5 flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition ${
                   hasPrayed
-                    ? "bg-red-100 text-red-700"
-                    : "border border-brand-tan text-brand-brown hover:bg-brand-beige"
+                    ? "bg-red-100 text-brand-rose"
+                    : "border border-brand-tan bg-white text-brand-brown hover:bg-brand-beige"
                 }`}
               >
                 <Heart className={`h-4 w-4 ${hasPrayed ? "fill-current" : ""}`} />

@@ -2,7 +2,14 @@ import Link from "next/link"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
-import { Heart, BookOpen, HelpCircle, MessageCircle } from "lucide-react"
+import { Heart, BookOpen, HelpCircle, MessageCircle, Bell, PlusCircle } from "lucide-react"
+
+function ageRange(age: number | null | undefined) {
+  if (!age) return null
+  if (age <= 14) return "13-14"
+  if (age <= 17) return "15-17"
+  return "18+"
+}
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -23,24 +30,25 @@ export default async function DashboardPage() {
   ])
 
   const pinned = [
-    { label: "Daily Devotional", icon: BookOpen, href: "/dashboard/devotional", item: devotional },
-    { label: "Personal Questions", icon: HelpCircle, href: "/dashboard/personal", item: personal },
-    { label: "Deep Thought", icon: MessageCircle, href: "/dashboard/deep", item: deep },
-    { label: "Hard Questions", icon: Heart, href: "/dashboard/questions", item: hard },
+    { label: "Daily Devotional", icon: BookOpen, href: "/dashboard/devotional", item: devotional, hint: "Start your day with reflection." },
+    { label: "Personal Questions", icon: HelpCircle, href: "/dashboard/personal", item: personal, hint: "Explore what's on your heart." },
+    { label: "Deep Thought", icon: MessageCircle, href: "/dashboard/deep", item: deep, hint: "Pause and reflect deeply." },
+    { label: "Hard Questions", icon: Heart, href: "/dashboard/questions", item: hard, hint: "View what others have on their mind." },
   ]
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div className="mx-auto max-w-6xl px-4 py-10">
+      <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold text-brand-brown-dark">Dashboard</h1>
-          <p className="text-brand-brown">Welcome back, {user.firstName || user.name || "friend"}.</p>
+          <h1 className="text-4xl text-brand-brown-dark">Dashboard</h1>
+          <p className="mt-1 text-brand-brown">
+            Welcome back, {user.firstName || user.name || "friend"}.
+            {user.age && <span className="ml-2 rounded-full bg-brand-beige px-2.5 py-0.5 text-xs font-semibold text-brand-brown">{ageRange(user.age)}</span>}
+          </p>
         </div>
-        <Link
-          href="/dashboard/prayer/new"
-          className="rounded-full bg-brand-brown px-5 py-2.5 font-semibold text-brand-cream hover:bg-brand-brown-dark"
-        >
-          + Create Prayer Request
+        <Link href="/dashboard/prayer/new" className="btn-primary">
+          <PlusCircle className="h-4 w-4" />
+          Create Prayer Request
         </Link>
       </div>
 
@@ -49,8 +57,9 @@ export default async function DashboardPage() {
           {notifications.map((n) => (
             <div
               key={n.id}
-              className="rounded-xl border-l-4 border-red-400 bg-red-50 p-4 text-red-900 shadow-sm"
+              className="flex items-start gap-3 rounded-2xl border-l-4 border-brand-rose bg-red-50 p-4 text-red-900 shadow-sm"
             >
+              <Bell className="mt-0.5 h-5 w-5 shrink-0 text-brand-rose" />
               {n.message}
             </div>
           ))}
@@ -62,32 +71,37 @@ export default async function DashboardPage() {
           <Link
             key={card.label}
             href={card.href}
-            className="flex flex-col justify-between rounded-2xl bg-white p-6 shadow-md transition hover:shadow-lg"
+            className="card-soft group flex flex-col justify-between"
           >
             <div className="mb-4 flex items-center justify-between">
-              <span className="text-sm font-semibold uppercase tracking-wider text-brand-sand">
-                {card.label}
-              </span>
-              <card.icon className="h-5 w-5 text-brand-brown" />
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-sand">{card.label}</span>
+              <card.icon className="h-5 w-5 text-brand-brown transition group-hover:text-brand-brown-dark" />
             </div>
-            <p className="text-brand-brown-dark">
-              {card.item?.content || "Nothing pinned yet."}
+            <p className="mb-3 line-clamp-3 text-brand-brown-dark">
+              {card.item?.content || card.hint}
             </p>
-            {card.item && (
-              <span className="mt-3 text-xs text-brand-sand">{card.label === "Hard Questions" ? "View what others have on their mind" : "Pinned"}</span>
-            )}
+            <span className="mt-auto text-xs font-semibold text-brand-sand">
+              {card.item ? (card.label === "Hard Questions" ? "View what others have on their mind" : "Pinned") : "Be the first to share"}
+            </span>
           </Link>
         ))}
       </div>
 
-      <div className="mt-10 rounded-2xl bg-white p-6 shadow-md">
-        <h2 className="mb-4 text-xl font-bold text-brand-brown-dark">Prayer Requests</h2>
-        <p className="mb-4 text-brand-brown">
-          View prayer requests from others in your age group and let them know you are praying.
-        </p>
+      <div className="mt-10 card">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-beige text-brand-brown">
+            <Heart className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-2xl text-brand-brown-dark">Prayer Requests</h2>
+            <p className="text-sm text-brand-sand">
+              View prayer requests from others in your age group and let them know you are praying.
+            </p>
+          </div>
+        </div>
         <Link
           href="/dashboard/prayer"
-          className="inline-block rounded-full border border-brand-brown px-4 py-2 text-sm font-medium text-brand-brown hover:bg-brand-brown hover:text-brand-cream"
+          className="btn-secondary"
         >
           View Prayer Requests
         </Link>
