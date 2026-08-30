@@ -144,3 +144,16 @@ model Notification {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model DiscordPrayerRequest {
+  id                    String   @id @default(cuid())
+  discordUserId         String
+  discordUsername       String?
+  request               String
+  status                String   @default("PENDING") // PENDING, APPROVED, DENIED
+  denialReason          String?
+  moderationMessageId   String?
+  approvedMessageId     String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
