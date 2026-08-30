@@ -4,15 +4,6 @@ import type { PrismaClient } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
 
-const publicKey = process.env.DISCORD_PUBLIC_KEY?.replace(/[^0-9a-fA-F]/g, "") || ""
-if (!publicKey) {
-  console.error("DISCORD_PUBLIC_KEY is not set. Discord interactions will fail with 401.")
-} else {
-  console.log("DISCORD_PUBLIC_KEY loaded (length):", publicKey.length, "prefix:", publicKey.slice(0, 8))
-}
-
-const keyIsValidHex = publicKey.length === 64
-
 type Embed = {
   title?: string
   description?: string
@@ -27,6 +18,10 @@ function truncate(str: string, len: number) {
 
 export async function POST(request: NextRequest) {
   const start = Date.now()
+  const publicKey = process.env.DISCORD_PUBLIC_KEY?.replace(/[^0-9a-fA-F]/g, "") || ""
+  const keyIsValidHex = publicKey.length === 64
+  console.log("Discord interaction POST received. Public key set:", !!publicKey, "length:", publicKey.length, "prefix:", publicKey.slice(0, 8))
+
   const signature = request.headers.get("x-signature-ed25519") || ""
   const timestamp = request.headers.get("x-signature-timestamp") || ""
   const body = await request.text()
