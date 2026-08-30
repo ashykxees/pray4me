@@ -10,6 +10,8 @@ const token = process.env.DISCORD_BOT_TOKEN
 const rest = token ? new REST({ version: "10" }).setToken(token) : null
 const verificationChannelId = process.env.DISCORD_VERIFICATION_CHANNEL_ID
 const appUrl = process.env.PUBLIC_APP_URL || "https://pray4me.cc"
+const applicationId = process.env.DISCORD_APPLICATION_ID
+const guildId = process.env.DISCORD_GUILD_ID
 
 function buildVerificationBody() {
   return {
@@ -34,6 +36,40 @@ function buildVerificationBody() {
         ],
       },
     ],
+  }
+}
+
+async function registerCommands() {
+  if (!rest || !applicationId) {
+    console.warn("DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID not set. Skipping slash-command registration.")
+    return
+  }
+
+  const commands = [
+    {
+      name: "request",
+      description: "Submit a prayer request to Pray4Me",
+      options: [
+        {
+          type: 3,
+          name: "request",
+          description: "what is your prayer request?",
+          required: true,
+        },
+      ],
+    },
+  ]
+
+  try {
+    if (guildId) {
+      await rest.put(Routes.applicationGuildCommands(applicationId, guildId), { body: commands })
+      console.log(`Registered guild slash commands in ${guildId}`)
+    } else {
+      await rest.put(Routes.applicationCommands(applicationId), { body: commands })
+      console.log("Registered global slash commands")
+    }
+  } catch (err) {
+    console.error("Failed to register slash commands:", err)
   }
 }
 
@@ -85,6 +121,7 @@ client.once("ready", () => {
   if (client.user) {
     client.user.setActivity("Pray4Me", { type: 3 })
   }
+  void registerCommands()
   void ensureVerificationMessage()
 })
 

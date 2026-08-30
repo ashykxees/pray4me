@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server"
-import { verifyKey, InteractionType, InteractionResponseType } from "discord-interactions"
+import { verifyKey, InteractionType, InteractionResponseType, InteractionResponseFlags } from "discord-interactions"
 import type { PrismaClient } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
@@ -13,8 +13,14 @@ if (!publicKey) {
 
 type Embed = {
   title?: string
+  description?: string
   color?: number
   fields?: { name: string; value: string; inline?: boolean }[]
+}
+
+function truncate(str: string, len: number) {
+  if (str.length <= len) return str
+  return str.slice(0, len - 3) + "..."
 }
 
 export async function POST(request: NextRequest) {
@@ -86,6 +92,70 @@ export async function POST(request: NextRequest) {
       embed.fields.push({ name: "Denial Reason", value: reason, inline: false })
     }
     return [embed]
+  }
+
+  if (interaction.type === InteractionType.APPLICATION_COMMAND) {
+    const data = interaction.data as Record<string, unknown>
+
+    if (data.name === "request") {
+      const options = (data.options as { name: string; value: string }[]) || []
+      const requestText = options.find((o) => o.name === "request")?.value?.trim() || ""
+
+      if (!requestText) {
+        return Response.json({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: { flags: InteractionResponseFlags.EPHEMERAL, content: "Please include your prayer request." },
+        })
+      }
+
+      const member = (interaction.member as Record<string, unknown>) || {}
+      const user = (member.user as Record<string, unknown>) || (interaction.user as Record<string, unknown>) || {}
+      const discordUserId = (user.id as string) || "unknown"
+      const discordUsername = (member.nick as string) || (user.global_name as string) || (user.username as string) || "Unknown"
+
+      try {
+        const { prisma } = await import("@/lib/prisma")
+        const { sendDiscordRequestModeration } = await import("@/lib/discord")
+
+        const record = await prisma.discordPrayerRequest.create({
+          data: {
+            discordUserId,
+            discordUsername,
+            request: requestText,
+          },
+        })
+
+        const sent = (await sendDiscordRequestModeration({
+          id: record.id,
+          discordUserId,
+          discordUsername,
+          request: truncate(requestText, 1024),
+        })) as { id?: string } | null
+
+        if (sent?.id) {
+          await prisma.discordPrayerRequest.update({
+            where: { id: record.id },
+            data: { moderationMessageId: sent.id },
+          })
+        }
+
+        return Response.json({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.EPHEMERAL,
+            content: "Your prayer request has been submitted for review.",
+          },
+        })
+      } catch (err) {
+        console.error("Failed to handle /request command:", err)
+        return Response.json({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: { flags: InteractionResponseFlags.EPHEMERAL, content: "Could not submit your request. Try again later." },
+        })
+      }
+    }
+
+    return new Response("Unknown command", { status: 400 })
   }
 
   if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
@@ -167,6 +237,47 @@ async function approveSubmission(prisma: PrismaClient, kind: string, id: string)
     await prisma.storyRequest.update({ where: { id }, data: { status: "APPROVED" } })
   } else if (kind === "profile") {
     await prisma.user.update({ where: { id }, data: { role: "approved" } })
+  } else if (kind === "request") {
+    const { sendApprovedDiscordRequest, addReaction, updateChannelMessage } = await import("@/lib/discord")
+    const request = await prisma.discordPrayerRequest.update({
+      where: { id },
+      data: { status: "APPROVED" },
+    })
+
+    const approved = (await sendApprovedDiscordRequest({
+      discordUserId: request.discordUserId,
+      discordUsername: request.discordUsername,
+      request: request.request,
+    })) as { id?: string } | null
+
+    if (approved?.id) {
+      await addReaction(process.env.DISCORD_REQUEST_APPROVAL_CHANNEL_ID || "1541284127335120968", approved.id, "🙏")
+      await prisma.discordPrayerRequest.update({
+        where: { id },
+        data: { approvedMessageId: approved.id },
+      })
+
+      if (request.moderationMessageId) {
+        await updateChannelMessage(
+          process.env.DISCORD_REQUEST_MODERATION_CHANNEL_ID || "1541276732777299998",
+          request.moderationMessageId,
+          {
+            embeds: [
+              {
+                title: "New Discord Prayer Request",
+                color: 0x2ecc71,
+                fields: [
+                  { name: "Submitted by", value: request.discordUsername || `<@${request.discordUserId}>`, inline: false },
+                  { name: "Prayer Request", value: truncate(request.request, 1024), inline: false },
+                  { name: "Status", value: "Approved", inline: true },
+                ],
+              },
+            ],
+            components: [],
+          }
+        )
+      }
+    }
   }
 }
 
@@ -186,6 +297,11 @@ async function denySubmission(prisma: PrismaClient, kind: string, id: string, re
   } else if (kind === "profile") {
     await prisma.user.update({ where: { id }, data: { role: "denied" } })
     await notifyProfileDenial(prisma, id, reason)
+  } else if (kind === "request") {
+    await prisma.discordPrayerRequest.update({
+      where: { id },
+      data: { status: "DENIED", denialReason: reason },
+    })
   }
 }
 

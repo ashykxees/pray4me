@@ -43,12 +43,20 @@ async function sendChannelMessage(channelId: string, body: object) {
   return rest.post(Routes.channelMessages(channelId), { body }) as Promise<unknown>
 }
 
+export async function addReaction(channelId: string, messageId: string, emoji: string) {
+  if (!rest || !channelId || !messageId) {
+    console.warn("Discord bot token or IDs missing. Reaction not added.")
+    return null
+  }
+  return rest.put(`${Routes.channelMessageReaction(channelId, messageId, encodeURIComponent(emoji))}/@me`) as Promise<unknown>
+}
+
 export async function updateChannelMessage(channelId: string, messageId: string, body: object) {
   if (!rest || !channelId || !messageId) return null
   return rest.patch(Routes.channelMessage(channelId, messageId), { body }) as Promise<unknown>
 }
 
-function passDenyButtons(type: "prayer" | "story", id: string): ActionRow[] {
+function passDenyButtons(type: "prayer" | "story" | "request", id: string): ActionRow[] {
   return [
     {
       type: 1,
@@ -68,6 +76,47 @@ function passDenyButtons(type: "prayer" | "story", id: string): ActionRow[] {
       ],
     },
   ]
+}
+
+export async function registerSlashCommands() {
+  if (!rest) {
+    console.warn("DISCORD_BOT_TOKEN not set. Skipping slash-command registration.")
+    return
+  }
+
+  const appId = process.env.DISCORD_APPLICATION_ID
+  const guildId = process.env.DISCORD_GUILD_ID
+  if (!appId) {
+    console.warn("DISCORD_APPLICATION_ID not set. Skipping slash-command registration.")
+    return
+  }
+
+  const commands = [
+    {
+      name: "request",
+      description: "Submit a prayer request to Pray4Me",
+      options: [
+        {
+          type: 3,
+          name: "request",
+          description: "what is your prayer request?",
+          required: true,
+        },
+      ],
+    },
+  ]
+
+  try {
+    if (guildId) {
+      await rest.put(Routes.applicationGuildCommands(appId, guildId), { body: commands })
+      console.log(`Registered guild slash commands in ${guildId}`)
+    } else {
+      await rest.put(Routes.applicationCommands(appId), { body: commands })
+      console.log("Registered global slash commands")
+    }
+  } catch (err) {
+    console.error("Failed to register slash commands:", err)
+  }
 }
 
 export async function sendProfileModeration(user: {
@@ -150,5 +199,47 @@ export async function sendStorySubmission(story: {
       },
     ],
     components: passDenyButtons("story", story.id),
+  })
+}
+
+export async function sendDiscordRequestModeration(request: {
+  id: string
+  discordUserId: string
+  discordUsername?: string | null
+  request: string
+}) {
+  const channelId = process.env.DISCORD_REQUEST_MODERATION_CHANNEL_ID || "1541276732777299998"
+  return sendChannelMessage(channelId, {
+    embeds: [
+      {
+        title: "New Discord Prayer Request",
+        color: 0x5d4037,
+        fields: [
+          { name: "Submitted by", value: request.discordUsername || `<@${request.discordUserId}>`, inline: false },
+          { name: "Prayer Request", value: request.request, inline: false },
+        ],
+      },
+    ],
+    components: passDenyButtons("request", request.id),
+  })
+}
+
+export async function sendApprovedDiscordRequest(request: {
+  discordUserId: string
+  discordUsername?: string | null
+  request: string
+}) {
+  const channelId = process.env.DISCORD_REQUEST_APPROVAL_CHANNEL_ID || "1541284127335120968"
+  return sendChannelMessage(channelId, {
+    embeds: [
+      {
+        title: "Prayer Request",
+        color: 0x2ecc71,
+        fields: [
+          { name: "Submitted by", value: request.discordUsername || `<@${request.discordUserId}>`, inline: false },
+          { name: "Request", value: request.request, inline: false },
+        ],
+      },
+    ],
   })
 }
