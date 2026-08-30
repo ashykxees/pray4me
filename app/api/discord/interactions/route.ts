@@ -4,12 +4,14 @@ import type { PrismaClient } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
 
-const publicKey = process.env.DISCORD_PUBLIC_KEY?.trim() || ""
+const publicKey = process.env.DISCORD_PUBLIC_KEY?.replace(/[^0-9a-fA-F]/g, "") || ""
 if (!publicKey) {
   console.error("DISCORD_PUBLIC_KEY is not set. Discord interactions will fail with 401.")
 } else {
-  console.log("DISCORD_PUBLIC_KEY loaded (prefix):", publicKey.slice(0, 8))
+  console.log("DISCORD_PUBLIC_KEY loaded (length):", publicKey.length, "prefix:", publicKey.slice(0, 8))
 }
+
+const keyIsValidHex = publicKey.length === 64
 
 type Embed = {
   title?: string
@@ -29,9 +31,20 @@ export async function POST(request: NextRequest) {
   const timestamp = request.headers.get("x-signature-timestamp") || ""
   const body = await request.text()
 
+  if (!publicKey || !keyIsValidHex) {
+    console.error("DISCORD_PUBLIC_KEY is missing or not a 64-char hex string.")
+    return new Response("Invalid request signature", { status: 401 })
+  }
+
   const isValid = await verifyKey(body, signature, timestamp, publicKey)
   if (!isValid) {
-    console.error("Invalid Discord signature — check that DISCORD_PUBLIC_KEY matches the key in your Discord app's General Information.")
+    console.error("Invalid Discord signature.", {
+      publicKeyLength: publicKey.length,
+      signatureLength: signature.length,
+      timestamp,
+      bodyLength: body.length,
+      bodyPreview: body.slice(0, 200),
+    })
     return new Response("Invalid request signature", { status: 401 })
   }
 
