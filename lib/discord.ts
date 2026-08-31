@@ -59,6 +59,44 @@ export async function removeGuildMemberRole(guildId: string, userId: string, rol
   return rest.delete(Routes.guildMemberRole(guildId, userId, roleId)) as Promise<unknown>
 }
 
+const MANAGE_ROLES_PERMISSION = 0x10000000
+let cachedGuildId: string | null | undefined
+
+export async function getDefaultGuildId(): Promise<string | null> {
+  const envGuildId = process.env.DISCORD_GUILD_ID
+  if (envGuildId) return envGuildId
+  if (cachedGuildId !== undefined) return cachedGuildId
+  if (!rest) {
+    console.warn("DISCORD_BOT_TOKEN not set; cannot look up guild ID.")
+    cachedGuildId = null
+    return null
+  }
+  try {
+    const guilds = (await rest.get(Routes.userGuilds())) as {
+      id: string
+      name: string
+      permissions: string
+    }[]
+    const manageable = guilds.find(
+      (g) => (Number(g.permissions) & MANAGE_ROLES_PERMISSION) === MANAGE_ROLES_PERMISSION
+    )
+    if (manageable) {
+      console.warn(
+        `DISCORD_GUILD_ID not set; using guild ${manageable.name} (${manageable.id}). Set DISCORD_GUILD_ID to avoid this lookup.`
+      )
+      cachedGuildId = manageable.id
+      return manageable.id
+    }
+    console.warn("Bot is not in any guild with Manage Roles permission; set DISCORD_GUILD_ID.")
+    cachedGuildId = null
+    return null
+  } catch (err) {
+    console.error("Failed to look up Discord guilds:", err)
+    cachedGuildId = null
+    return null
+  }
+}
+
 export async function addReaction(channelId: string, messageId: string, emoji: string) {
   if (!rest || !channelId || !messageId) {
     console.warn("Discord bot token or IDs missing. Reaction not added.")
