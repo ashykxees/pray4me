@@ -43,6 +43,22 @@ async function sendChannelMessage(channelId: string, body: object) {
   return rest.post(Routes.channelMessages(channelId), { body }) as Promise<unknown>
 }
 
+export async function addGuildMemberRole(guildId: string, userId: string, roleId: string) {
+  if (!rest || !guildId || !userId || !roleId) {
+    console.warn("Discord bot token or IDs missing. Role not added.")
+    return null
+  }
+  return rest.put(Routes.guildMemberRole(guildId, userId, roleId)) as Promise<unknown>
+}
+
+export async function removeGuildMemberRole(guildId: string, userId: string, roleId: string) {
+  if (!rest || !guildId || !userId || !roleId) {
+    console.warn("Discord bot token or IDs missing. Role not removed.")
+    return null
+  }
+  return rest.delete(Routes.guildMemberRole(guildId, userId, roleId)) as Promise<unknown>
+}
+
 export async function addReaction(channelId: string, messageId: string, emoji: string) {
   if (!rest || !channelId || !messageId) {
     console.warn("Discord bot token or IDs missing. Reaction not added.")

@@ -1,9 +1,9 @@
-const { Client, GatewayIntentBits } = require("discord.js")
+const { Client, GatewayIntentBits, Events } = require("discord.js")
 const { REST } = require("@discordjs/rest")
 const { Routes } = require("discord-api-types/v10")
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 })
 
 const token = process.env.DISCORD_BOT_TOKEN
@@ -12,6 +12,7 @@ const verificationChannelId = process.env.DISCORD_VERIFICATION_CHANNEL_ID
 const appUrl = process.env.PUBLIC_APP_URL || "https://pray4me.cc"
 const applicationId = process.env.DISCORD_APPLICATION_ID
 const guildId = process.env.DISCORD_GUILD_ID
+const unverifiedRoleId = process.env.DISCORD_UNVERIFIED_ROLE_ID || "1541282402582663208"
 
 function buildVerificationBody() {
   return {
@@ -123,6 +124,16 @@ client.once("ready", () => {
   }
   void registerCommands()
   void ensureVerificationMessage()
+})
+
+client.on(Events.GuildMemberAdd, async (member) => {
+  if (!unverifiedRoleId || member.user.bot) return
+  try {
+    await member.roles.add(unverifiedRoleId)
+    console.log(`Assigned unverified role to ${member.user.tag}`)
+  } catch (err) {
+    console.error("Failed to assign unverified role:", err)
+  }
 })
 
 if (!token) {
