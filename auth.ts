@@ -3,6 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import Google from "next-auth/providers/google"
 import Discord from "next-auth/providers/discord"
 import { prisma } from "@/lib/prisma"
+import { addGuildMemberRole, removeGuildMemberRole } from "@/lib/discord"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -47,6 +48,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return Response.redirect(new URL("/dashboard", nextUrl))
       }
       return true
+    },
+  },
+  events: {
+    async signIn({ account }) {
+      if (account?.provider !== "discord" || !account.providerAccountId) return
+
+      const guildId = process.env.DISCORD_GUILD_ID
+      const verifiedRoleId = process.env.DISCORD_VERIFIED_ROLE_ID || "1541281396406878289"
+      const unverifiedRoleId = process.env.DISCORD_UNVERIFIED_ROLE_ID || "1541282402582663208"
+      if (!guildId) return
+
+      const userId = account.providerAccountId
+      try {
+        await removeGuildMemberRole(guildId, userId, unverifiedRoleId)
+        await addGuildMemberRole(guildId, userId, verifiedRoleId)
+        console.log(`Verified Discord user ${userId} in guild ${guildId}`)
+      } catch (err) {
+        console.error("Failed to update verification roles:", err)
+      }
     },
   },
 })
