@@ -60,7 +60,16 @@ export async function removeGuildMemberRole(guildId: string, userId: string, rol
 }
 
 const MANAGE_ROLES_PERMISSION = 0x10000000
+const ADMINISTRATOR_PERMISSION = 0x8
 let cachedGuildId: string | null | undefined
+
+function hasManageRolesPermission(permissions: string) {
+  const perms = Number(permissions)
+  return (
+    (perms & MANAGE_ROLES_PERMISSION) === MANAGE_ROLES_PERMISSION ||
+    (perms & ADMINISTRATOR_PERMISSION) === ADMINISTRATOR_PERMISSION
+  )
+}
 
 export async function getDefaultGuildId(): Promise<string | null> {
   const envGuildId = process.env.DISCORD_GUILD_ID
@@ -77,9 +86,7 @@ export async function getDefaultGuildId(): Promise<string | null> {
       name: string
       permissions: string
     }[]
-    const manageable = guilds.find(
-      (g) => (Number(g.permissions) & MANAGE_ROLES_PERMISSION) === MANAGE_ROLES_PERMISSION
-    )
+    const manageable = guilds.find((g) => hasManageRolesPermission(g.permissions))
     if (manageable) {
       console.warn(
         `DISCORD_GUILD_ID not set; using guild ${manageable.name} (${manageable.id}). Set DISCORD_GUILD_ID to avoid this lookup.`
