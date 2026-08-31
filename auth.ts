@@ -51,19 +51,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
-    async signIn({ account }) {
-      if (account?.provider !== "discord" || !account.providerAccountId) return
+    async signIn({ account, user, profile }) {
+      console.log("signIn event", {
+        provider: account?.provider,
+        providerAccountId: account?.providerAccountId,
+        userId: user?.id,
+        profileId: (profile as { id?: string } | undefined)?.id,
+      })
+
+      if (account?.provider !== "discord" || !account.providerAccountId) {
+        console.log("Skipping verification role swap: not a Discord sign-in")
+        return
+      }
 
       const guildId = process.env.DISCORD_GUILD_ID
       const verifiedRoleId = process.env.DISCORD_VERIFIED_ROLE_ID || "1541281396406878289"
       const unverifiedRoleId = process.env.DISCORD_UNVERIFIED_ROLE_ID || "1541282402582663208"
-      if (!guildId) return
+
+      if (!guildId) {
+        console.error("DISCORD_GUILD_ID is not set. Cannot swap verification roles.")
+        return
+      }
 
       const userId = account.providerAccountId
+      console.log(`Swapping verification roles for Discord user ${userId} in guild ${guildId}`)
       try {
         await removeGuildMemberRole(guildId, userId, unverifiedRoleId)
+        console.log(`Removed unverified role ${unverifiedRoleId}`)
         await addGuildMemberRole(guildId, userId, verifiedRoleId)
-        console.log(`Verified Discord user ${userId} in guild ${guildId}`)
+        console.log(`Added verified role ${verifiedRoleId}`)
       } catch (err) {
         console.error("Failed to update verification roles:", err)
       }
