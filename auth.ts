@@ -3,7 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import Google from "next-auth/providers/google"
 import Discord from "next-auth/providers/discord"
 import { prisma } from "@/lib/prisma"
-import { addGuildMemberRole, getDefaultGuildId, removeGuildMemberRole } from "@/lib/discord"
+import { addGuildMemberRole, getGuildIdForDiscordUser, removeGuildMemberRole } from "@/lib/discord"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -35,10 +35,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return true
       }
 
-      const guildId = await getDefaultGuildId()
+      const guildId = await getGuildIdForDiscordUser(discordUserId)
       if (!guildId) {
         console.error(
-          "Cannot swap verification roles: DISCORD_GUILD_ID not set and no manageable guild found."
+          `Cannot swap verification roles for Discord user ${discordUserId}: DISCORD_GUILD_ID not set and user not found in any manageable guild.`
         )
         return true
       }

@@ -104,6 +104,49 @@ export async function getDefaultGuildId(): Promise<string | null> {
   }
 }
 
+export async function getGuildIdForDiscordUser(userId: string): Promise<string | null> {
+  const envGuildId = process.env.DISCORD_GUILD_ID
+  if (envGuildId) return envGuildId
+
+  if (!rest) {
+    console.warn("DISCORD_BOT_TOKEN not set; cannot look up guild ID for user.")
+    return null
+  }
+
+  try {
+    const guilds = (await rest.get(Routes.userGuilds())) as {
+      id: string
+      name: string
+      permissions: string
+    }[]
+    const manageable = guilds.filter((g) => hasManageRolesPermission(g.permissions))
+
+    if (manageable.length === 0) {
+      console.warn("Bot is not in any guild with Manage Roles permission; set DISCORD_GUILD_ID.")
+      return null
+    }
+
+    for (const g of manageable) {
+      try {
+        await rest.get(Routes.guildMember(g.id, userId))
+        console.log(`Found Discord user ${userId} in guild ${g.name} (${g.id}).`)
+        return g.id
+      } catch (err: unknown) {
+        if (err && typeof err === "object" && "status" in err && (err as { status: number }).status === 404) {
+          continue
+        }
+        console.warn(`Could not verify membership in guild ${g.name} (${g.id}):`, err)
+      }
+    }
+
+    console.warn(`Discord user ${userId} is not a member of any manageable guild.`)
+    return null
+  } catch (err) {
+    console.error("Failed to look up Discord guilds:", err)
+    return null
+  }
+}
+
 export async function addReaction(channelId: string, messageId: string, emoji: string) {
   if (!rest || !channelId || !messageId) {
     console.warn("Discord bot token or IDs missing. Reaction not added.")
